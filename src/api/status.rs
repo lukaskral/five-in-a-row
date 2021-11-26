@@ -1,8 +1,5 @@
 use crate::api::fetch;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::thread::sleep;
-use std::time::Duration;
 use std::vec::Vec;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -29,33 +26,27 @@ pub struct StatusResponse {
 }
 
 pub async fn fetch_status(
-    client: &reqwest::Client,
+    client: &mut fetch::JobsApi,
     payload: &StatusPayload,
 ) -> Result<StatusResponse, fetch::Error> {
-    let res: StatusResponse = fetch::post_data(
-        client,
-        "https://piskvorky.jobs.cz/api/v1/checkStatus",
-        payload,
-    )
-    .await?;
+    let res: StatusResponse = client
+        .post_data("https://piskvorky.jobs.cz/api/v1/checkStatus", payload)
+        .await?;
     Ok(res)
 }
 
 pub async fn fetch_last_status(
-    client: &reqwest::Client,
+    client: &mut fetch::JobsApi,
     payload: &StatusPayload,
 ) -> Result<StatusResponse, fetch::Error> {
-    let res: StatusResponse = fetch::post_data(
-        client,
-        "https://piskvorky.jobs.cz/api/v1/checkLastStatus",
-        payload,
-    )
-    .await?;
+    let res: StatusResponse = client
+        .post_data("https://piskvorky.jobs.cz/api/v1/checkLastStatus", payload)
+        .await?;
     Ok(res)
 }
 
 pub async fn wait_my_turn(
-    client: &reqwest::Client,
+    client: &mut fetch::JobsApi,
     player_id: &str,
     payload: &StatusPayload,
 ) -> Result<StatusResponse, fetch::Error> {

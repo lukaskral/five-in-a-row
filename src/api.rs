@@ -1,7 +1,7 @@
 #[path = "api/connect.rs"]
 pub mod connect;
 #[path = "api/fetch.rs"]
-mod fetch;
+pub mod fetch;
 #[path = "api/play.rs"]
 pub mod play;
 #[path = "api/register.rs"]

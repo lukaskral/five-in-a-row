@@ -15,10 +15,11 @@ pub struct RegisterResponse {
 }
 
 pub async fn invoke_registration(
-    client: &reqwest::Client,
+    client: &mut fetch::JobsApi,
     payload: &RegisterPayload,
 ) -> Result<RegisterResponse, fetch::Error> {
-    let res: RegisterResponse =
-        fetch::post_data(client, "https://piskvorky.jobs.cz/api/v1/user", payload).await?;
+    let res: RegisterResponse = client
+        .post_data("https://piskvorky.jobs.cz/api/v1/user", payload)
+        .await?;
     Ok(res)
 }

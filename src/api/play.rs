@@ -18,11 +18,12 @@ pub struct Coordinate {
 }
 
 pub async fn invoke_move(
-    client: &reqwest::Client,
+    client: &mut fetch::JobsApi,
     payload: &PlayPayload,
 ) -> Result<status::StatusResponse, fetch::Error> {
-    let res: status::StatusResponse =
-        fetch::post_data(client, "https://piskvorky.jobs.cz/api/v1/play", payload).await?;
+    let res: status::StatusResponse = client
+        .post_data("https://piskvorky.jobs.cz/api/v1/play", payload)
+        .await?;
     Ok(res)
 }
 

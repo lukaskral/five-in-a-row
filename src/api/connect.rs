@@ -14,10 +14,11 @@ pub struct ConnectResponse {
 }
 
 pub async fn invoke_connection(
-    client: &reqwest::Client,
+    client: &mut fetch::JobsApi,
     payload: &ConnectPayload,
 ) -> Result<ConnectResponse, fetch::Error> {
-    let res: ConnectResponse =
-        fetch::post_data(client, "https://piskvorky.jobs.cz/api/v1/connect", payload).await?;
+    let res: ConnectResponse = client
+        .post_data("https://piskvorky.jobs.cz/api/v1/connect", payload)
+        .await?;
     Ok(res)
 }

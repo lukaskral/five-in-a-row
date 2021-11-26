@@ -15,7 +15,6 @@ use std::vec::Vec;
 
 #[derive(Debug)]
 pub enum FiveInRowError {
-    MissingRivalsMove,
     Error,
 }
 impl Display for FiveInRowError {
