@@ -65,7 +65,7 @@ impl JobsApi {
         }
     }
 
-    pub async fn post_data<P: Serialize, R: DeserializeOwned>(
+    pub async fn post_data<P: Serialize + std::fmt::Debug, R: DeserializeOwned>(
         &mut self,
         url: &str,
         payload: P,
@@ -75,15 +75,18 @@ impl JobsApi {
         if remaining > 0 {
             sleep(Duration::from_millis(u64::try_from(remaining + 100)?));
         }
+        // println!("\n\n====================\nRequest: {}\n{:?}", url, payload);
         loop {
             let maybe_response = self.client.post(url).body(body.to_string()).send().await;
 
             if let Ok(response) = maybe_response {
                 if response.status() == 429 {
+                    // println!("...waiting");
                     sleep(Duration::from_millis(1100));
                     continue;
                 } else {
                     let response_text = response.text().await?;
+                    // println!("====================\nResponse:\n{}", response_text);
                     let res: R = serde_json::from_str(&response_text)?;
                     self.last_call = self.time.elapsed().as_millis();
                     return Ok(res);
