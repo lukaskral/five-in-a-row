@@ -54,6 +54,12 @@ impl FiveInRowMove {
             dif_y
         }
     }
+
+    pub fn get_distance_from_moves(&self, vec: &Vec<FiveInRowMove>) -> i32 {
+        vec.iter().fold(i32::MAX, |ret, mv| {
+            i32::min(ret, self.get_distance(mv).abs())
+        })
+    }
 }
 
 impl Eq for FiveInRowMove {}
@@ -80,7 +86,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_gets_distance() {
+    fn it_checks_type() {
         let mv = FiveInRowMove::Mine(1, 2);
         assert_eq!(mv.is_same_type(Some(&FiveInRowMove::Rivals(3, 4))), false);
         assert_eq!(mv.is_same_type(Some(&FiveInRowMove::Mine(3, 4))), true);
@@ -88,7 +94,7 @@ mod tests {
     }
 
     #[test]
-    fn it_checks_type() {
+    fn it_computes_distance() {
         let mv = FiveInRowMove::Mine(1, 2);
         assert_eq!(mv.get_distance(&FiveInRowMove::Rivals(1, 2)), 0);
         assert_eq!(mv.get_distance(&FiveInRowMove::Rivals(2, 2)), -1);

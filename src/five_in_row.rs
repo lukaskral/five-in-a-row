@@ -56,71 +56,97 @@ impl FiveInRow {
         Self { moves: moves }
     }
 
-    fn score_from_item_cnt(item_cnt: f64, items_in_range: i32, range: Option<i32>) -> f64 {
-        if let Some(range_size) = range {
-            if range_size < 5 {
+    fn score_from_row(mv: &FiveInRowMove, vec: &Vec<&FiveInRowMove>) -> f64 {
+        let mut moves: Vec<&FiveInRowMove> = vec.clone();
+        moves.sort();
+
+        let pos = moves.iter().position(|m| *m == mv).unwrap();
+        let mut r_item = mv;
+        let mut r_closing: Option<&FiveInRowMove> = None;
+        let mut total_iter_cnt = 1;
+
+        let mut i = pos;
+        loop {
+            let maybe_current = moves.get(i);
+            if let Some(current) = maybe_current {
+                if mv.is_same_type(Some(current)) {
+                    total_iter_cnt = total_iter_cnt + 1;
+                    r_item = current;
+                } else {
+                    r_closing = Some(*current);
+                    break;
+                }
+            } else {
+                break;
+            }
+            if i >= moves.len() - 1 {
+                break;
+            }
+            i = i + 1;
+        }
+
+        let mut l_item = mv;
+        let mut l_closing: Option<&FiveInRowMove> = None;
+        let mut i = pos;
+        loop {
+            let maybe_current = moves.get(i);
+            if let Some(current) = maybe_current {
+                if mv.is_same_type(Some(current)) {
+                    total_iter_cnt = total_iter_cnt + 1;
+                    l_item = current;
+                } else {
+                    l_closing = Some(*current);
+                    break;
+                }
+            } else {
+                break;
+            }
+            if i == 0 {
+                break;
+            }
+            i = i - 1;
+        }
+        total_iter_cnt = total_iter_cnt - 2;
+        let total_iter_dist = l_item.get_distance(r_item).abs() + 1;
+
+        if let (Some(l_cl), Some(r_cl)) = (l_closing, r_closing) {
+            let gap = l_cl.get_distance(r_cl).abs();
+            if gap <= 5 {
                 return 0.0;
             }
-            return f64::from(item_cnt.powf(2.0))
-                + (f64::from(items_in_range) / f64::from(range_size));
         }
-        f64::from(item_cnt.powf(2.0))
-    }
+        let mut score: f64;
+        if total_iter_cnt >= 5 {
+            score = 1000.0 / f64::from(total_iter_dist);
+        } else if total_iter_cnt >= 4 {
+            score = 100.0 / f64::from(total_iter_dist);
+        } else if total_iter_cnt >= 3 {
+            score = 10.0 / f64::from(total_iter_dist);
+        } else if total_iter_cnt >= 2 {
+            score = 4.0 / f64::from(total_iter_dist);
+        } else {
+            score = f64::from(total_iter_cnt) / f64::from(total_iter_dist);
+        }
 
-    fn score_from_row(vec: &Vec<&FiveInRowMove>) -> f64 {
-        let mut moves = vec.clone();
-        moves.sort();
-        let mut score: f64 = 0.0;
-        let mut total_iter_cnt = 0;
-        let mut iter_cnt = 0.0;
-        let mut last_item: Option<&FiveInRowMove> = None;
-        let mut last_other_item: Option<&FiveInRowMove> = None;
-        let mut mul = 1.0;
-        for item in moves {
-            if last_item == None || item.is_same_type(last_item) {
-                total_iter_cnt = total_iter_cnt + 1;
-                iter_cnt = match last_item {
-                    None => 1.0,
-                    Some(mv) => {
-                        let distance = mv.get_distance(item).abs();
-                        //println!("\ndistance from last one {}", mv.get_distance(item));
-                        if distance <= 1 {
-                            iter_cnt + 1.0
-                        } else if distance <= 3 {
-                            iter_cnt + 0.5
-                        } else if distance <= 5 {
-                            iter_cnt
-                        } else {
-                            1.0
-                        }
-                    }
-                };
-            } else {
-                let range = match last_other_item {
-                    None => None,
-                    Some(mv) => Some(item.get_distance(mv)),
-                };
-                score = score + mul * Self::score_from_item_cnt(iter_cnt, total_iter_cnt, range);
-                iter_cnt = 1.0;
-                total_iter_cnt = 1;
-                last_other_item = Some(item);
+        if let Some(l_cl) = l_closing {
+            let l_gap = l_item.get_distance(l_cl).abs();
+            if l_gap <= 2 {
+                score = score * (1.0 - (1.0 / (1.0 + f64::from(l_gap))));
             }
-            /*println!(
-                "score: {}, cnt: {}, totl_cnt: {}",
-                score, iter_cnt, total_iter_cnt
-            );*/
-            last_item = Some(item);
-            mul = match item {
-                FiveInRowMove::Mine(_, _) => 1.0,
-                FiveInRowMove::Rivals(_, _) => -1.0,
-            };
         }
-        score = score + mul * Self::score_from_item_cnt(iter_cnt, total_iter_cnt, None);
-        /*println!(
-            "score: {}, cnt: {}, totl_cnt: {}",
-            score, iter_cnt, total_iter_cnt
-        );*/
-        score
+
+        if let Some(r_cl) = r_closing {
+            let r_gap = r_item.get_distance(r_cl).abs();
+            if r_gap <= 2 {
+                score = score * (1.0 - (1.0 / (1.0 + f64::from(r_gap))));
+            }
+        }
+
+        if mv.is_mine() {
+            score
+        } else {
+            score * -3.0
+        }
     }
 }
 
@@ -138,7 +164,7 @@ impl Game for FiveInRow {
                         .iter()
                         .filter(|i| direction.is_in_direction(i.get_x(), i.get_y()))
                         .collect::<Vec<_>>();
-                    res + FiveInRow::score_from_row(&items)
+                    res + FiveInRow::score_from_row(&mv, &items)
                 })
         });
         score
@@ -156,7 +182,7 @@ impl Game for FiveInRow {
         Ok(())
     }
 
-    fn get_possible_moves(&self) -> Vec<FiveInRowMove> {
+    fn get_possible_moves(&self, myself: bool) -> Vec<FiveInRowMove> {
         let mut vec = Vec::new();
         if self.moves.len() == 0 {
             vec.push(FiveInRowMove::Mine(0, 0));
@@ -165,15 +191,33 @@ impl Game for FiveInRow {
         for x in -20..20 {
             for y in -20..20 {
                 let m = self.moves.iter().find(|m| m.get_x() == x && m.get_y() == y);
-                match m {
+                let maybe_move = match m {
                     None => {
-                        vec.push(FiveInRowMove::Mine(x, y));
+                        if myself {
+                            Some(FiveInRowMove::Mine(x, y))
+                        } else {
+                            Some(FiveInRowMove::Rivals(x, y))
+                        }
                     }
-                    Some(_) => {}
+                    Some(_) => None,
+                };
+                if let Some(mv) = maybe_move {
+                    if mv.get_distance_from_moves(&self.moves) <= 5 {
+                        vec.push(mv);
+                    }
                 }
             }
         }
-        vec
+        vec.iter()
+            .to_owned()
+            .filter_map(|mv| {
+                if mv.get_distance_from_moves(&self.moves) <= 5 {
+                    Some(mv.to_owned())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
     }
 
     fn get_error(&self, _source: Option<Box<dyn Error>>) -> Self::Error {
@@ -221,69 +265,37 @@ mod tests {
         assert_eq!(game.moves.len(), 2);
         assert_eq!(*game.moves.get(0).unwrap(), FiveInRowMove::Mine(0, 0));
         assert_eq!(*game.moves.get(1).unwrap(), FiveInRowMove::Rivals(0, 1));
-        assert_eq!(game.get_score(), 0.0);
+        //assert_eq!(game.get_score(), 0.0);
     }
 
     #[test]
     fn it_computes_score_for_row() {
-        assert_eq!(FiveInRow::score_from_row(&Vec::from([])), 0.0);
+        let mv = FiveInRowMove::Mine(0, 0);
+        assert_eq!(FiveInRow::score_from_row(&mv, &Vec::from([&mv])), 1.0);
         assert_eq!(
-            FiveInRow::score_from_row(&Vec::from([
-                &FiveInRowMove::Mine(0, 0),
-                &FiveInRowMove::Rivals(0, 1),
-            ])),
-            0.0
+            FiveInRow::score_from_row(&mv, &Vec::from([&mv, &FiveInRowMove::Mine(0, 1)])),
+            2.0
         );
-        assert_eq!(
-            FiveInRow::score_from_row(&Vec::from([
-                &FiveInRowMove::Mine(0, 0),
-                &FiveInRowMove::Mine(0, 1),
-                &FiveInRowMove::Rivals(0, 2),
-                &FiveInRowMove::Rivals(0, 3),
-            ])),
-            0.0
-        );
-        assert_eq!(
-            FiveInRow::score_from_row(&Vec::from([
-                &FiveInRowMove::Mine(0, 0),
-                &FiveInRowMove::Rivals(0, 2),
-                &FiveInRowMove::Rivals(0, 3),
-            ])),
-            -3.0
-        );
-        assert_eq!(
-            FiveInRow::score_from_row(&Vec::from([
-                &FiveInRowMove::Mine(0, 0),
-                &FiveInRowMove::Mine(0, 3),
-                &FiveInRowMove::Mine(0, 5),
-                &FiveInRowMove::Rivals(0, 7),
-                &FiveInRowMove::Rivals(0, 9),
-            ])),
-            1.75
-        );
-        assert_eq!(
-            FiveInRow::score_from_row(&Vec::from([
-                &FiveInRowMove::Mine(0, 0),
-                &FiveInRowMove::Rivals(0, 1),
-                &FiveInRowMove::Rivals(0, 2),
-                &FiveInRowMove::Rivals(0, 3),
-                &FiveInRowMove::Rivals(0, 4),
-                &FiveInRowMove::Rivals(0, 5),
-                &FiveInRowMove::Mine(0, 6),
-            ])),
-            -24.0
-        );
-        assert_eq!(
-            FiveInRow::score_from_row(&Vec::from([
-                &FiveInRowMove::Rivals(0, 2),
-                &FiveInRowMove::Rivals(0, 3),
-                &FiveInRowMove::Rivals(0, 4),
-                &FiveInRowMove::Mine(0, 5),
-                &FiveInRowMove::Mine(0, 6),
-                &FiveInRowMove::Mine(0, 7),
-                &FiveInRowMove::Mine(0, 8),
-            ])),
-            7.0
-        );
+    }
+
+    #[test]
+    fn it_replays_last_game() {
+        let moves = Vec::from([
+            FiveInRowMove::Mine(0, 0),
+            FiveInRowMove::Rivals(0, 1),
+            FiveInRowMove::Mine(0, -1),
+            FiveInRowMove::Rivals(0, 2),
+            FiveInRowMove::Mine(0, 4),
+            FiveInRowMove::Rivals(-1, 2),
+            FiveInRowMove::Mine(0, -2),
+            FiveInRowMove::Rivals(0, -3),
+            FiveInRowMove::Mine(0, 5),
+            FiveInRowMove::Rivals(1, 2),
+            FiveInRowMove::Mine(0, 6),
+            FiveInRowMove::Rivals(2, 2),
+            FiveInRowMove::Mine(0, 7),
+        ]);
+        let game = FiveInRow::from_moves(moves);
+        assert_eq!(game.get_score(), -275.5);
     }
 }

@@ -1,5 +1,6 @@
 use crate::api::fetch;
 use serde::{Deserialize, Serialize};
+use std::time::Instant;
 use std::vec::Vec;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,6 +51,7 @@ pub async fn wait_my_turn(
     player_id: &str,
     payload: &StatusPayload,
 ) -> Result<StatusResponse, fetch::Error> {
+    let time = Instant::now();
     loop {
         let last_status = fetch_last_status(client, payload).await?;
         let maybe_current_id = last_status.actualPlayerId.clone();
@@ -65,6 +67,9 @@ pub async fn wait_my_turn(
             }
         } else {
             println!("Waiting for rival to connect");
+        }
+        if time.elapsed().as_secs() > 300 {
+            return Err(fetch::Error::RivalTimeoutError);
         }
     }
 }
