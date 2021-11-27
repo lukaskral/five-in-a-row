@@ -12,6 +12,7 @@ pub enum Error {
     ApiErr(reqwest::Error),
     JsonErr(serde_json::Error),
     TimeError(std::num::TryFromIntError),
+    RivalTimeoutError,
 }
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
@@ -34,6 +35,7 @@ impl Display for Error {
             Self::ApiErr(_) => write!(f, "Api Error"),
             Self::JsonErr(_) => write!(f, "Json Error"),
             Self::TimeError(_) => write!(f, "Time Error"),
+            Self::RivalTimeoutError => write!(f, "Rival Time Out Error"),
         }
     }
 }
@@ -43,6 +45,7 @@ impl StdError for Error {
             Self::ApiErr(err) => Some(err),
             Self::JsonErr(err) => Some(err),
             Self::TimeError(err) => Some(err),
+            Self::RivalTimeoutError => None,
         }
     }
 }
