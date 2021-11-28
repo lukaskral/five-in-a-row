@@ -89,7 +89,6 @@ mod tests {
         let game = FiveInRow::from_moves(moves);
         let game_play = GamePlay { game: game };
         let suggested = game_play.suggest_move(true).unwrap();
-        // FIXME
-        //assert_eq!(suggested, FiveInRowMove::Mine(-1, 0));
+        assert_eq!(suggested, FiveInRowMove::Mine(-1, 0));
     }
 }

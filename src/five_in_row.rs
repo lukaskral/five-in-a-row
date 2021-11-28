@@ -153,7 +153,7 @@ impl FiveInRow {
         if mv.is_mine() {
             score
         } else {
-            score * -3.0
+            score * -1.5
         }
     }
 }
@@ -280,72 +280,78 @@ mod tests {
     #[test]
     fn it_computes_score_for_row() {
         let mv = FiveInRowMove::Mine(0, 0);
-        assert_eq!(
-            FiveInRow::score_from_row(&mv, &Vec::from([&mv])),
-            Score::Numeric(1.0)
+        let mvr = FiveInRowMove::Rivals(0, 0);
+
+        let score_x = FiveInRow::score_from_row(&mv, &Vec::from([&mv]));
+        let score_xx =
+            FiveInRow::score_from_row(&mv, &Vec::from([&mv, &FiveInRowMove::Mine(0, 1)]));
+        let score_xxx = FiveInRow::score_from_row(
+            &mv,
+            &Vec::from([&mv, &FiveInRowMove::Mine(0, 1), &FiveInRowMove::Mine(0, 2)]),
         );
-        assert_eq!(
-            FiveInRow::score_from_row(&mv, &Vec::from([&mv, &FiveInRowMove::Mine(0, 1)])),
-            Score::Numeric(2.0)
-        );
-        assert_eq!(
-            FiveInRow::score_from_row(
+        let score_xxxx = FiveInRow::score_from_row(
+            &mv,
+            &Vec::from([
                 &mv,
-                &Vec::from([&mv, &FiveInRowMove::Mine(0, 1), &FiveInRowMove::Mine(0, 2)])
-            ),
-            Score::Numeric(3.33)
+                &FiveInRowMove::Mine(0, 1),
+                &FiveInRowMove::Mine(0, 2),
+                &FiveInRowMove::Mine(0, 3),
+            ]),
         );
-        assert_eq!(
-            FiveInRow::score_from_row(
+        let score_xxxxx = FiveInRow::score_from_row(
+            &mv,
+            &Vec::from([
                 &mv,
-                &Vec::from([
-                    &mv,
-                    &FiveInRowMove::Mine(0, 1),
-                    &FiveInRowMove::Mine(0, 2),
-                    &FiveInRowMove::Mine(0, 3)
-                ])
-            ),
-            Score::Numeric(25.0)
+                &FiveInRowMove::Mine(0, 1),
+                &FiveInRowMove::Mine(0, 2),
+                &FiveInRowMove::Mine(0, 3),
+                &FiveInRowMove::Mine(0, 4),
+            ]),
         );
-        assert_eq!(
-            FiveInRow::score_from_row(
+        let score_xxxox = FiveInRow::score_from_row(
+            &mv,
+            &Vec::from([
                 &mv,
-                &Vec::from([
-                    &mv,
-                    &FiveInRowMove::Mine(0, 1),
-                    &FiveInRowMove::Mine(0, 2),
-                    &FiveInRowMove::Mine(0, 3),
-                    &FiveInRowMove::Mine(0, 4)
-                ])
-            ),
-            Score::Win
+                &FiveInRowMove::Mine(0, 1),
+                &FiveInRowMove::Mine(0, 2),
+                &FiveInRowMove::Rivals(0, 3),
+                &FiveInRowMove::Mine(0, 4),
+            ]),
         );
-        assert_eq!(
-            FiveInRow::score_from_row(
+
+        let score_xxxxex = FiveInRow::score_from_row(
+            &mv,
+            &Vec::from([
                 &mv,
-                &Vec::from([
-                    &mv,
-                    &FiveInRowMove::Mine(0, 1),
-                    &FiveInRowMove::Mine(0, 2),
-                    &FiveInRowMove::Rivals(0, 3),
-                    &FiveInRowMove::Mine(0, 4)
-                ])
-            ),
-            Score::Numeric(1.67)
+                &FiveInRowMove::Mine(0, 1),
+                &FiveInRowMove::Mine(0, 2),
+                &FiveInRowMove::Mine(0, 3),
+                &FiveInRowMove::Mine(0, 6),
+            ]),
         );
-        assert_eq!(
-            FiveInRow::score_from_row(
-                &mv,
-                &Vec::from([
-                    &mv,
-                    &FiveInRowMove::Mine(0, 1),
-                    &FiveInRowMove::Mine(0, 2),
-                    &FiveInRowMove::Mine(0, 3),
-                    &FiveInRowMove::Mine(0, 6)
-                ])
-            ),
-            Score::Numeric(142.85)
+
+        let score_ooooo = FiveInRow::score_from_row(
+            &mvr,
+            &Vec::from([
+                &mvr,
+                &FiveInRowMove::Rivals(0, 1),
+                &FiveInRowMove::Rivals(0, 2),
+                &FiveInRowMove::Rivals(0, 3),
+                &FiveInRowMove::Rivals(0, 4),
+            ]),
         );
+
+        assert!(score_x < score_xx);
+        assert!(score_xx < score_xxx);
+        assert!(score_xxx < score_xxxx);
+        assert!(score_xxxx < score_xxxxx);
+        assert!(score_xxxx < score_xxxxex);
+        assert_ne!(score_xxxxex, Score::Win);
+
+        assert_eq!(score_xxxxx, Score::Win);
+        assert_eq!(score_ooooo, Score::Loss);
+
+        assert!(score_xxx > score_xxxox);
     }
 
     #[test]
