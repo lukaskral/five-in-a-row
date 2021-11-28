@@ -4,7 +4,7 @@ mod dir;
 #[path = "five_in_row/move.rs"]
 pub mod mv;
 
-use crate::api::status::Coordinate;
+use crate::api::{fetch, status::Coordinate};
 use crate::five_in_row::dir::Direction;
 use crate::five_in_row::mv::FiveInRowMove;
 use crate::game::{score::Score, Game};
@@ -17,6 +17,12 @@ use std::vec::Vec;
 pub enum FiveInRowError {
     Error,
     TimeoutError,
+    ApiError(fetch::Error),
+}
+impl From<fetch::Error> for FiveInRowError {
+    fn from(e: fetch::Error) -> Self {
+        Self::ApiError(e)
+    }
 }
 impl Display for FiveInRowError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
