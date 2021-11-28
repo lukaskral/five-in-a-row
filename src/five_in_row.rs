@@ -7,7 +7,7 @@ pub mod mv;
 use crate::api::status::Coordinate;
 use crate::five_in_row::dir::Direction;
 use crate::five_in_row::mv::FiveInRowMove;
-use crate::game::Game;
+use crate::game::{score::Score, Game};
 use std::error::Error;
 use std::error::Error as StdError;
 use std::fmt::{self, Display, Formatter};
@@ -16,6 +16,7 @@ use std::vec::Vec;
 #[derive(Debug)]
 pub enum FiveInRowError {
     Error,
+    TimeoutError,
 }
 impl Display for FiveInRowError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -56,7 +57,7 @@ impl FiveInRow {
         Self { moves: moves }
     }
 
-    fn score_from_row(mv: &FiveInRowMove, vec: &Vec<&FiveInRowMove>) -> f64 {
+    fn score_from_row(mv: &FiveInRowMove, vec: &Vec<&FiveInRowMove>) -> Score {
         let mut moves: Vec<&FiveInRowMove> = vec.clone();
         moves.sort();
 
@@ -112,20 +113,27 @@ impl FiveInRow {
         if let (Some(l_cl), Some(r_cl)) = (l_closing, r_closing) {
             let gap = l_cl.get_distance(r_cl).abs();
             if gap <= 5 {
-                return 0.0;
+                return Score::Numeric(0.0);
             }
         }
-        let mut score: f64;
+        let mut score: Score;
         if total_iter_cnt >= 5 {
-            score = 1000.0 / f64::from(total_iter_dist);
+            if total_iter_cnt == total_iter_dist {
+                return if mv.is_mine() {
+                    Score::Win
+                } else {
+                    Score::Loss
+                };
+            }
+            score = Score::Numeric(1000.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 4 {
-            score = 100.0 / f64::from(total_iter_dist);
+            score = Score::Numeric(100.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 3 {
-            score = 10.0 / f64::from(total_iter_dist);
+            score = Score::Numeric(10.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 2 {
-            score = 4.0 / f64::from(total_iter_dist);
+            score = Score::Numeric(4.0 / f64::from(total_iter_dist));
         } else {
-            score = f64::from(total_iter_cnt) / f64::from(total_iter_dist);
+            score = Score::Numeric(f64::from(total_iter_cnt) / f64::from(total_iter_dist));
         }
 
         if let Some(l_cl) = l_closing {
@@ -154,18 +162,19 @@ impl Game for FiveInRow {
     type Move = FiveInRowMove;
     type Error = FiveInRowError;
 
-    fn get_score(&self) -> f64 {
-        let score: f64 = self.moves.iter().fold(0.0, |res, mv| {
-            res + Direction::create_list_from_move(mv)
-                .iter()
-                .fold(0.0, |res, direction| {
+    fn get_score(&self) -> Score {
+        let score: Score = self.moves.iter().fold(Score::Numeric(0.0), |res, mv| {
+            res + Direction::create_list_from_move(mv).iter().fold(
+                Score::Numeric(0.0),
+                |res, direction| {
                     let items = self
                         .moves
                         .iter()
                         .filter(|i| direction.is_in_direction(i.get_x(), i.get_y()))
                         .collect::<Vec<_>>();
                     res + FiveInRow::score_from_row(&mv, &items)
-                })
+                },
+            )
         });
         score
     }
@@ -232,7 +241,7 @@ mod tests {
     fn it_creates_empty_game() {
         let game = FiveInRow::create_empty();
         assert_eq!(game.moves.len(), 0);
-        assert_eq!(game.get_score(), 0.0);
+        assert_eq!(game.get_score(), Score::Numeric(0.0));
     }
 
     #[test]
@@ -271,10 +280,71 @@ mod tests {
     #[test]
     fn it_computes_score_for_row() {
         let mv = FiveInRowMove::Mine(0, 0);
-        assert_eq!(FiveInRow::score_from_row(&mv, &Vec::from([&mv])), 1.0);
+        assert_eq!(
+            FiveInRow::score_from_row(&mv, &Vec::from([&mv])),
+            Score::Numeric(1.0)
+        );
         assert_eq!(
             FiveInRow::score_from_row(&mv, &Vec::from([&mv, &FiveInRowMove::Mine(0, 1)])),
-            2.0
+            Score::Numeric(2.0)
+        );
+        assert_eq!(
+            FiveInRow::score_from_row(
+                &mv,
+                &Vec::from([&mv, &FiveInRowMove::Mine(0, 1), &FiveInRowMove::Mine(0, 2)])
+            ),
+            Score::Numeric(3.33)
+        );
+        assert_eq!(
+            FiveInRow::score_from_row(
+                &mv,
+                &Vec::from([
+                    &mv,
+                    &FiveInRowMove::Mine(0, 1),
+                    &FiveInRowMove::Mine(0, 2),
+                    &FiveInRowMove::Mine(0, 3)
+                ])
+            ),
+            Score::Numeric(25.0)
+        );
+        assert_eq!(
+            FiveInRow::score_from_row(
+                &mv,
+                &Vec::from([
+                    &mv,
+                    &FiveInRowMove::Mine(0, 1),
+                    &FiveInRowMove::Mine(0, 2),
+                    &FiveInRowMove::Mine(0, 3),
+                    &FiveInRowMove::Mine(0, 4)
+                ])
+            ),
+            Score::Win
+        );
+        assert_eq!(
+            FiveInRow::score_from_row(
+                &mv,
+                &Vec::from([
+                    &mv,
+                    &FiveInRowMove::Mine(0, 1),
+                    &FiveInRowMove::Mine(0, 2),
+                    &FiveInRowMove::Rivals(0, 3),
+                    &FiveInRowMove::Mine(0, 4)
+                ])
+            ),
+            Score::Numeric(1.67)
+        );
+        assert_eq!(
+            FiveInRow::score_from_row(
+                &mv,
+                &Vec::from([
+                    &mv,
+                    &FiveInRowMove::Mine(0, 1),
+                    &FiveInRowMove::Mine(0, 2),
+                    &FiveInRowMove::Mine(0, 3),
+                    &FiveInRowMove::Mine(0, 6)
+                ])
+            ),
+            Score::Numeric(142.85)
         );
     }
 
@@ -296,6 +366,6 @@ mod tests {
             FiveInRowMove::Mine(0, 7),
         ]);
         let game = FiveInRow::from_moves(moves);
-        assert_eq!(game.get_score(), -275.5);
+        assert_eq!(game.get_score(), Score::Numeric(-275.5));
     }
 }
