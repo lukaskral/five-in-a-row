@@ -53,7 +53,7 @@ impl StdError for Error {
 pub struct JobsApi {
     client: reqwest::Client,
     time: Instant,
-    last_call: u128,
+    last_call: i64,
 }
 
 impl JobsApi {
@@ -71,11 +71,12 @@ impl JobsApi {
         payload: P,
     ) -> Result<R, Error> {
         let body = json!(payload);
-        let remaining = 1000 - (self.time.elapsed().as_millis() - self.last_call);
+        let remaining: i64 =
+            1000 - (i64::try_from(self.time.elapsed().as_millis())? - self.last_call);
         if remaining > 0 {
             sleep(Duration::from_millis(u64::try_from(remaining + 100)?));
         }
-        // println!("\n\n====================\nRequest: {}\n{:?}", url, payload);
+        //println!("\n\n====================\nRequest: {}\n{:?}", url, payload);
         loop {
             let maybe_response = self.client.post(url).body(body.to_string()).send().await;
 
@@ -88,7 +89,7 @@ impl JobsApi {
                     let response_text = response.text().await?;
                     // println!("====================\nResponse:\n{}", response_text);
                     let res: R = serde_json::from_str(&response_text)?;
-                    self.last_call = self.time.elapsed().as_millis();
+                    self.last_call = i64::try_from(self.time.elapsed().as_millis())?;
                     return Ok(res);
                 }
             }
