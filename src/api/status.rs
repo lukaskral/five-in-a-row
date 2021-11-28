@@ -52,23 +52,34 @@ pub async fn wait_my_turn(
     payload: &StatusPayload,
 ) -> Result<StatusResponse, fetch::Error> {
     let time = Instant::now();
+    let mut reported = false;
     loop {
         let last_status = fetch_last_status(client, payload).await?;
         let maybe_current_id = last_status.actualPlayerId.clone();
         let maybe_cross_id = last_status.playerCrossId.clone();
         let maybe_circle_id = last_status.playerCircleId.clone();
+        let maybe_winner_id = last_status.winnerId.clone();
         if let (Some(current_player_id), Some(_), Some(_)) =
             (maybe_current_id, maybe_cross_id, maybe_circle_id)
         {
             if current_player_id.eq(player_id) {
                 return Ok(last_status);
             } else {
-                println!("Waiting for rival's move");
+                if !reported {
+                    reported = true;
+                    println!("Waiting for rival's move...");
+                }
             }
         } else {
-            println!("Waiting for rival to connect");
+            if !reported {
+                reported = true;
+                println!("Waiting for rival to connect...");
+            }
         }
-        if time.elapsed().as_secs() > 300 {
+        if let Some(_) = maybe_winner_id {
+            return Ok(last_status);
+        }
+        if time.elapsed().as_secs() > 180 {
             return Err(fetch::Error::RivalTimeoutError);
         }
     }
