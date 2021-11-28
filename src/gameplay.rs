@@ -1,4 +1,5 @@
 use crate::game::{score::Score, Game};
+use rand::Rng;
 
 pub struct GamePlay<G: Game> {
     pub game: G,
@@ -29,7 +30,7 @@ impl<G: Game> GamePlay<G> {
             } else {
                 Score::min(max, *score)
             }
-        });
+        }) - 0.2;
         let p = possibilities
             .iter()
             .filter(|p| {
@@ -42,8 +43,16 @@ impl<G: Game> GamePlay<G> {
             })
             .map(|p| p.to_owned())
             .collect::<Vec<_>>();
-        println!("Found best move ({} options)", p.len());
-        if let Some(item) = p.get(p.len() / 2) {
+        let mut rng = rand::thread_rng();
+        let idx = (rng.gen::<f64>() * f64::from(p.len() as i32))
+            .floor()
+            .rem_euclid(2f64.powi(32)) as usize;
+        println!(
+            "Found best move ({} options, getting opt. n. {})",
+            p.len(),
+            idx
+        );
+        if let Some(item) = p.get(idx) {
             let (mv, _) = *item;
             Ok(mv)
         } else {

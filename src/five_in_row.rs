@@ -153,7 +153,7 @@ impl FiveInRow {
         if mv.is_mine() {
             score
         } else {
-            score * -1.5
+            score * -2.5
         }
     }
 }
@@ -372,6 +372,9 @@ mod tests {
             FiveInRowMove::Mine(0, 7),
         ]);
         let game = FiveInRow::from_moves(moves);
-        assert_eq!(game.get_score(), Score::Numeric(-275.5));
+        let score = game.get_score();
+        assert!(score < Score::Win);
+        assert!(score > Score::Loss);
+        assert!(score < Score::Numeric(0.0));
     }
 }
