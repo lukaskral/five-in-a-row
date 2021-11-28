@@ -1,5 +1,5 @@
 use core::cmp::Ordering;
-use std::ops::{Add, Mul};
+use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Score {
@@ -98,6 +98,17 @@ impl Add<f64> for Score {
         match self {
             Score::Win => Score::Win,
             Score::Numeric(score) => Score::Numeric(score + other),
+            Score::Loss => Score::Loss,
+        }
+    }
+}
+
+impl Sub<f64> for Score {
+    type Output = Score;
+    fn sub(self, other: f64) -> Score {
+        match self {
+            Score::Win => Score::Win,
+            Score::Numeric(score) => Score::Numeric(score - other),
             Score::Loss => Score::Loss,
         }
     }
