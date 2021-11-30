@@ -1,7 +1,7 @@
 #[path = "suggestion.rs"]
 pub mod suggestion;
 
-use crate::game::{score::Score, Game};
+use crate::game::{error::Error, score::Score, Game};
 use crate::gameplay::suggestion::Suggestion;
 
 pub struct GamePlay<G: Game> {
@@ -21,7 +21,7 @@ impl<G: Game> GamePlay<G> {
         &self,
         myself: bool,
         parent_moves: &Vec<G::Move>,
-    ) -> Result<Vec<Suggestion<G>>, G::Error> {
+    ) -> Result<Vec<Suggestion<G>>, Error<G>> {
         let mut game = self.game.clone();
         for parent_move in parent_moves.iter() {
             game.do_move(*parent_move)?;
@@ -77,7 +77,7 @@ impl<G: Game> GamePlay<G> {
         &mut self,
         myself: bool,
         parent_moves: &Vec<G::Move>,
-    ) -> Result<(), G::Error> {
+    ) -> Result<(), Error<G>> {
         let suggestions = self.get_suggestions(myself, parent_moves)?;
         if parent_moves.len() == 0 {
             self.suggestions = suggestions;
@@ -100,16 +100,16 @@ impl<G: Game> GamePlay<G> {
         Ok(())
     }
 
-    pub fn suggest_move(&mut self, myself: bool) -> Result<Suggestion<G>, G::Error> {
+    pub fn suggest_move(&mut self, myself: bool) -> Result<Suggestion<G>, Error<G>> {
         if self.suggestions.len() == 0 {
             self.compute_suggestions(myself, &Vec::new())?;
         }
         self.suggestions
             .get(0)
-            .map_or(Err(self.game.get_error(None)), |s| Ok(s.clone()))
+            .map_or(Err(Error::NoSuggestionAvailable), |s| Ok(s.clone()))
     }
 
-    pub fn add_move(&mut self, mv: G::Move) -> Result<(), G::Error> {
+    pub fn add_move(&mut self, mv: G::Move) -> Result<(), Error<G>> {
         let maybe_suggestion: Option<&Suggestion<G>> =
             self.suggestions.iter().find(|s| *s.get_move() == mv);
 

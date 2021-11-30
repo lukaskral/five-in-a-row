@@ -4,38 +4,11 @@ mod dir;
 #[path = "move.rs"]
 pub mod mv;
 
-use crate::api::{fetch, status::Coordinate};
+use crate::api::status::Coordinate;
 use crate::five_in_row::dir::Direction;
 use crate::five_in_row::mv::FiveInRowMove;
-use crate::game::{score::Score, Game};
-use std::error::Error;
-use std::error::Error as StdError;
-use std::fmt::{self, Display, Formatter};
+use crate::game::{error::Error, score::Score, Game};
 use std::vec::Vec;
-
-#[derive(Debug)]
-pub enum FiveInRowError {
-    Error,
-    TimeoutError,
-    ApiError(fetch::Error),
-}
-impl From<fetch::Error> for FiveInRowError {
-    fn from(e: fetch::Error) -> Self {
-        Self::ApiError(e)
-    }
-}
-impl Display for FiveInRowError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            _ => write!(f, "unhandled error!"),
-        }
-    }
-}
-impl StdError for FiveInRowError {
-    fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        None
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct FiveInRow {
@@ -166,7 +139,6 @@ impl FiveInRow {
 
 impl Game for FiveInRow {
     type Move = FiveInRowMove;
-    type Error = FiveInRowError;
 
     fn get_score(&self) -> Score {
         let score: Score = self.moves.iter().fold(Score::Numeric(0.0), |res, mv| {
@@ -185,13 +157,13 @@ impl Game for FiveInRow {
         score
     }
 
-    fn do_move(&mut self, new_move: Self::Move) -> Result<(), Self::Error> {
+    fn do_move(&mut self, new_move: Self::Move) -> Result<(), Error<FiveInRow>> {
         let existing_move = self
             .moves
             .iter()
             .find(|mv| mv.get_x() == new_move.get_x() && mv.get_y() == new_move.get_y());
         if let Some(_) = existing_move {
-            return Err(self.get_error(None));
+            return Err(Error::IncorrectMove(new_move));
         }
         self.moves.push(new_move);
         Ok(())
@@ -233,10 +205,6 @@ impl Game for FiveInRow {
                 }
             })
             .collect::<Vec<_>>()
-    }
-
-    fn get_error(&self, _source: Option<Box<dyn Error>>) -> Self::Error {
-        FiveInRowError::Error
     }
 }
 

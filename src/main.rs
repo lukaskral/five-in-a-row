@@ -7,7 +7,7 @@ mod game;
 #[path = "game/gameplay.rs"]
 mod gameplay;
 
-use five_in_row::{mv::FiveInRowMove, FiveInRow, FiveInRowError};
+use five_in_row::{mv::FiveInRowMove, FiveInRow};
 use gameplay::GamePlay;
 use std::boxed::Box;
 use std::error::Error;
@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn play(user_token: &str, user_id: &str) -> Result<String, FiveInRowError> {
+async fn play(user_token: &str, user_id: &str) -> Result<String, game::error::Error<FiveInRow>> {
     let mut client = api::fetch::JobsApi::new(reqwest::Client::new());
     let now = Instant::now();
     let con_data = api::connect::invoke_connection(
@@ -104,59 +104,54 @@ async fn play(user_token: &str, user_id: &str) -> Result<String, FiveInRowError>
     println!("New game 🃏: {:?}", game_token);
 
     loop {
-        let maybe_stat_data =
-            api::status::wait_my_turn(&mut client, &user_id, &status_payload).await;
-        if let Ok(stat_data) = maybe_stat_data {
-            if let Some(winner_id) = stat_data.winnerId {
-                break Ok(winner_id);
-            }
+        let stat_data = api::status::wait_my_turn(&mut client, &user_id, &status_payload).await?;
+        if let Some(winner_id) = stat_data.winnerId {
+            break Ok(winner_id);
+        }
 
-            let maybe_cross_id = stat_data.playerCrossId.clone();
-            let (my_symbol, rivals_symbol) = if let Some(cross_id) = maybe_cross_id {
-                if cross_id.eq(&user_id) {
-                    ("❌", "⭕")
-                } else {
-                    ("⭕", "❌")
-                }
+        let maybe_cross_id = stat_data.playerCrossId.clone();
+        let (my_symbol, rivals_symbol) = if let Some(cross_id) = maybe_cross_id {
+            if cross_id.eq(&user_id) {
+                ("❌", "⭕")
             } else {
-                ("💀", "💻")
-            };
-
-            let maybe_coord = stat_data.coordinates.get(0);
-            if let Some(coord) = maybe_coord {
-                let rivals_move = FiveInRowMove::from_api_coordinates(&user_id, coord);
-                game_play.add_move(rivals_move)?;
-                println!(
-                    "Rival's move {}: {:?} ({} s)",
-                    rivals_symbol,
-                    rivals_move,
-                    now.elapsed().as_secs()
-                );
-            }
-
-            let maybe_suggestion = game_play.suggest_move(true);
-            if let Ok(suggestion) = maybe_suggestion {
-                println!(
-                    "My move {}: {:?} ({} s)",
-                    my_symbol,
-                    suggestion,
-                    now.elapsed().as_secs()
-                );
-                let mv = suggestion.get_move();
-                api::play::invoke_move(
-                    &mut client,
-                    &api::play::PlayPayload {
-                        userToken: String::from(user_token),
-                        gameToken: game_token.clone(),
-                        positionX: mv.get_x(),
-                        positionY: mv.get_y(),
-                    },
-                )
-                .await?;
-                game_play.add_move(*mv)?;
+                ("⭕", "❌")
             }
         } else {
-            break Err(FiveInRowError::TimeoutError);
+            ("💀", "💻")
+        };
+
+        let maybe_coord = stat_data.coordinates.get(0);
+        if let Some(coord) = maybe_coord {
+            let rivals_move = FiveInRowMove::from_api_coordinates(&user_id, coord);
+            game_play.add_move(rivals_move)?;
+            println!(
+                "Rival's move {}: {:?} ({} s)",
+                rivals_symbol,
+                rivals_move,
+                now.elapsed().as_secs()
+            );
+        }
+
+        let maybe_suggestion = game_play.suggest_move(true);
+        if let Ok(suggestion) = maybe_suggestion {
+            println!(
+                "My move {}: {:?} ({} s)",
+                my_symbol,
+                suggestion,
+                now.elapsed().as_secs()
+            );
+            let mv = suggestion.get_move();
+            api::play::invoke_move(
+                &mut client,
+                &api::play::PlayPayload {
+                    userToken: String::from(user_token),
+                    gameToken: game_token.clone(),
+                    positionX: mv.get_x(),
+                    positionY: mv.get_y(),
+                },
+            )
+            .await?;
+            game_play.add_move(*mv)?;
         }
     }
 }
