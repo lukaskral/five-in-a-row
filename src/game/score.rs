@@ -9,33 +9,40 @@ pub enum Score {
 }
 
 impl Score {
-    fn max<'a>(one: &'a Score, other: &'a Score) -> &'a Score {
+    fn max<'a>(one: &'a Self, other: &'a Self) -> &'a Self {
         if *one > *other {
             one
         } else {
             other
         }
     }
-    fn min<'a>(one: &'a Score, other: &'a Score) -> &'a Score {
+    fn min<'a>(one: &'a Self, other: &'a Self) -> &'a Self {
         if *one < *other {
             one
         } else {
             other
         }
     }
+    pub fn abs(&self) -> Self {
+        if self > &Self::Numeric(0.0) {
+            *self
+        } else {
+            *self * -1.0
+        }
+    }
 }
 
 impl Eq for Score {}
 impl Ord for Score {
-    fn cmp(&self, other: &Score) -> Ordering {
+    fn cmp(&self, other: &Self) -> Ordering {
         match self {
-            Score::Win => match *other {
-                Score::Win => Ordering::Equal,
+            Self::Win => match *other {
+                Self::Win => Ordering::Equal,
                 _ => Ordering::Greater,
             },
-            Score::Numeric(score) => match *other {
-                Score::Win => Ordering::Less,
-                Score::Numeric(other_score) => {
+            Self::Numeric(score) => match *other {
+                Self::Win => Ordering::Less,
+                Self::Numeric(other_score) => {
                     let dif = score - other_score;
                     if dif < -0.01 {
                         Ordering::Less
@@ -45,17 +52,17 @@ impl Ord for Score {
                         Ordering::Equal
                     }
                 }
-                Score::Loss => Ordering::Greater,
+                Self::Loss => Ordering::Greater,
             },
-            Score::Loss => match *other {
-                Score::Loss => Ordering::Equal,
+            Self::Loss => match *other {
+                Self::Loss => Ordering::Equal,
                 _ => Ordering::Less,
             },
         }
     }
 }
 impl PartialEq for Score {
-    fn eq(&self, other: &Score) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         Ord::cmp(self, other) == Ordering::Equal
     }
 }
@@ -65,62 +72,81 @@ impl PartialOrd for Score {
     }
 }
 
-impl Add for Score {
-    type Output = Score;
-    fn add(self, other: Score) -> Score {
+impl Add<Score> for Score {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
         match self {
-            Score::Win => {
-                if other == Score::Loss {
-                    Score::Numeric(0.0)
+            Self::Win => {
+                if other == Self::Loss {
+                    Self::Numeric(0.0)
                 } else {
-                    Score::Win
+                    Self::Win
                 }
             }
-            Score::Numeric(score) => match other {
-                Score::Win => Score::Win,
-                Score::Numeric(other_score) => Score::Numeric(score + other_score),
-                Score::Loss => Score::Loss,
+            Self::Numeric(score) => match other {
+                Self::Win => Self::Win,
+                Self::Numeric(other_score) => Self::Numeric(score + other_score),
+                Self::Loss => Self::Loss,
             },
-            Score::Loss => {
-                if other == Score::Win {
-                    Score::Numeric(0.0)
+            Self::Loss => {
+                if other == Self::Win {
+                    Self::Numeric(0.0)
                 } else {
-                    Score::Loss
+                    Self::Loss
                 }
             }
         }
     }
 }
 
+impl Sub<Score> for Score {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        self + (other * -1.0)
+    }
+}
+
 impl Add<f64> for Score {
-    type Output = Score;
-    fn add(self, other: f64) -> Score {
+    type Output = Self;
+    fn add(self, other: f64) -> Self {
         match self {
-            Score::Win => Score::Win,
-            Score::Numeric(score) => Score::Numeric(score + other),
-            Score::Loss => Score::Loss,
+            Self::Win => Self::Win,
+            Self::Numeric(score) => Self::Numeric(score + other),
+            Self::Loss => Self::Loss,
         }
     }
 }
 
 impl Sub<f64> for Score {
-    type Output = Score;
-    fn sub(self, other: f64) -> Score {
+    type Output = Self;
+    fn sub(self, other: f64) -> Self {
         match self {
-            Score::Win => Score::Win,
-            Score::Numeric(score) => Score::Numeric(score - other),
-            Score::Loss => Score::Loss,
+            Self::Win => Self::Win,
+            Self::Numeric(score) => Self::Numeric(score - other),
+            Self::Loss => Self::Loss,
         }
     }
 }
 
 impl Mul<f64> for Score {
-    type Output = Score;
-    fn mul(self, other: f64) -> Score {
+    type Output = Self;
+    fn mul(self, other: f64) -> Self {
         match self {
-            Score::Win => Score::Win,
-            Score::Numeric(score) => Score::Numeric(score * other),
-            Score::Loss => Score::Loss,
+            Self::Win => {
+                if other > 0.0 {
+                    Self::Win
+                } else {
+                    Self::Loss
+                }
+            }
+            Self::Numeric(score) => Self::Numeric(score * other),
+            Self::Loss => {
+                if other > 0.0 {
+                    Self::Win
+                } else {
+                    Self::Loss
+                }
+            }
         }
     }
 }
