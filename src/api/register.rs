@@ -2,12 +2,14 @@ use crate::api::fetch;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct RegisterPayload {
     pub nickname: String,
     pub email: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct RegisterResponse {
     pub statusCode: u16,
     pub userId: String,

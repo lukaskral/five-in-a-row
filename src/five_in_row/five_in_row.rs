@@ -7,7 +7,7 @@ pub mod mv;
 use crate::api::status::Coordinate;
 use crate::five_in_row::dir::Direction;
 use crate::five_in_row::mv::FiveInRowMove;
-use crate::game::{error::Error, score::Score, Game};
+use crate::game::{error::Error, score::Score, Game, GameMove};
 use std::vec::Vec;
 
 #[derive(Debug, Clone)]
@@ -98,7 +98,7 @@ impl FiveInRow {
         let mut score: Score;
         if total_iter_cnt >= 5 {
             if total_iter_cnt == total_iter_dist {
-                return if mv.is_mine() {
+                return if GameMove::is_mine(mv) {
                     Score::Win
                 } else {
                     Score::Loss

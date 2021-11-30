@@ -1,4 +1,4 @@
-use crate::game::{score::Score, Game};
+use crate::game::{error::Error, score::Score, Game, GameMove};
 use core::cmp::Ordering;
 
 #[derive(Clone, Debug)]
@@ -9,8 +9,33 @@ impl<G: Game> Suggestion<G> {
         &self.0
     }
     pub fn get_score(&self) -> &Score {
-        &self.1
+        return &self.1;
     }
+    pub fn get_deep_score(&self, depth: u8) -> &Score {
+        if depth > 0 {
+            let scores: Vec<&Score> = self
+                .get_suggestions()
+                .iter()
+                .map(|s| s.get_deep_score(depth - 1))
+                .collect::<Vec<_>>();
+
+            println!("Scores: {:?}", scores);
+            let score_result: Result<&Score, Error<G>> = if GameMove::is_mine(self.get_move()) {
+                scores
+                    .iter()
+                    .max()
+                    .map_or(Err(Error::NoSuggestionAvailable), |s| Ok(s))
+            } else {
+                scores
+                    .iter()
+                    .min()
+                    .map_or(Err(Error::NoSuggestionAvailable), |s| Ok(s))
+            };
+            return score_result.unwrap();
+        }
+        return &self.get_score();
+    }
+
     pub fn get_suggestions(&self) -> &Vec<Suggestion<G>> {
         &self.2
     }

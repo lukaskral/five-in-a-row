@@ -4,12 +4,14 @@ use std::time::Instant;
 use std::vec::Vec;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct StatusPayload {
     pub userToken: String,
     pub gameToken: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct Coordinate {
     pub playerId: String,
     pub x: i32,
@@ -17,6 +19,7 @@ pub struct Coordinate {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct StatusResponse {
     pub statusCode: u16,
     pub playerCrossId: Option<String>,
@@ -79,7 +82,7 @@ pub async fn wait_my_turn(
         if let Some(_) = maybe_winner_id {
             return Ok(last_status);
         }
-        if time.elapsed().as_secs() > 600 {
+        if time.elapsed().as_secs() > 180 {
             return Err(fetch::Error::RivalTimeoutError);
         }
     }
