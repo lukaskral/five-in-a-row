@@ -1,10 +1,11 @@
-#[path = "game/score.rs"]
+#[path = "score.rs"]
 pub mod score;
 use crate::game::score::Score;
 use std::error::Error;
+use std::fmt::Debug;
 
 pub trait Game: Clone {
-    type Move: Copy + std::fmt::Debug;
+    type Move: Eq + Ord + PartialEq + Copy + Debug;
     type Error;
 
     fn get_score(&self) -> Score;

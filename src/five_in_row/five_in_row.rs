@@ -1,7 +1,7 @@
-#[path = "five_in_row/direction.rs"]
+#[path = "direction.rs"]
 mod dir;
 
-#[path = "five_in_row/move.rs"]
+#[path = "move.rs"]
 pub mod mv;
 
 use crate::api::{fetch, status::Coordinate};
