@@ -4,7 +4,7 @@ mod api;
 mod five_in_row;
 #[path = "game/game.rs"]
 mod game;
-#[path = "gameplay.rs"]
+#[path = "game/gameplay.rs"]
 mod gameplay;
 
 use five_in_row::{mv::FiveInRowMove, FiveInRow, FiveInRowError};
