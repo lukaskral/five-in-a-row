@@ -1,8 +1,8 @@
-#[path = "api.rs"]
+#[path = "api/api.rs"]
 mod api;
-#[path = "five_in_row.rs"]
+#[path = "five_in_row/five_in_row.rs"]
 mod five_in_row;
-#[path = "game.rs"]
+#[path = "game/game.rs"]
 mod game;
 #[path = "gameplay.rs"]
 mod gameplay;
@@ -80,7 +80,7 @@ async fn play(user_token: &str, user_id: &str) -> Result<String, FiveInRowError>
 
     let stat_data = api::status::fetch_status(&mut client, &status_payload).await?;
     let game = FiveInRow::from_api_coordinates(stat_data.coordinates, &user_id);
-    let mut game_play = GamePlay { game: game };
+    let mut game_play = GamePlay::new(game);
 
     println!("New game 🃏: {:?}", game_token);
 
@@ -115,25 +115,26 @@ async fn play(user_token: &str, user_id: &str) -> Result<String, FiveInRowError>
                 );
             }
 
-            let maybe_my_move = game_play.suggest_move(true);
-            if let Ok(my_move) = maybe_my_move {
+            let maybe_suggestion = game_play.suggest_move(true);
+            if let Ok(suggestion) = maybe_suggestion {
                 println!(
                     "My move {}: {:?} ({} s)",
                     my_symbol,
-                    my_move,
+                    suggestion,
                     now.elapsed().as_secs()
                 );
+                let mv = suggestion.get_move();
                 api::play::invoke_move(
                     &mut client,
                     &api::play::PlayPayload {
                         userToken: String::from(user_token),
                         gameToken: game_token.clone(),
-                        positionX: my_move.get_x(),
-                        positionY: my_move.get_y(),
+                        positionX: mv.get_x(),
+                        positionY: mv.get_y(),
                     },
                 )
                 .await?;
-                game_play.add_move(my_move)?;
+                game_play.add_move(*mv)?;
             }
         } else {
             break Err(FiveInRowError::TimeoutError);

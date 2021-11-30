@@ -79,7 +79,7 @@ pub async fn wait_my_turn(
         if let Some(_) = maybe_winner_id {
             return Ok(last_status);
         }
-        if time.elapsed().as_secs() > 180 {
+        if time.elapsed().as_secs() > 600 {
             return Err(fetch::Error::RivalTimeoutError);
         }
     }

@@ -1,0 +1,10 @@
+#[path = "connect.rs"]
+pub mod connect;
+#[path = "fetch.rs"]
+pub mod fetch;
+#[path = "play.rs"]
+pub mod play;
+#[path = "register.rs"]
+pub mod register;
+#[path = "status.rs"]
+pub mod status;
