@@ -64,8 +64,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         println!("\t- total games: {}", gameplays);
         println!("\n");
     }
-
-    Ok(())
 }
 
 async fn play(user_token: &str, user_id: &str) -> Result<String, game::error::Error<FiveInRow>> {

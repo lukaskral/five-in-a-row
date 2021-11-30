@@ -2,11 +2,13 @@ use crate::api::fetch;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct ConnectPayload {
     pub userToken: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct ConnectResponse {
     pub statusCode: u16,
     pub gameToken: String,

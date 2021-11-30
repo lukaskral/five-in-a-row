@@ -30,6 +30,13 @@ impl Score {
             *self * -1.0
         }
     }
+    pub fn is_finished(&self) -> bool {
+        match self {
+            Self::Numeric(_) => false,
+            Self::Loss => true,
+            Self::Win => true,
+        }
+    }
 }
 
 impl Eq for Score {}

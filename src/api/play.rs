@@ -3,6 +3,7 @@ use crate::api::status;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct PlayPayload {
     pub userToken: String,
     pub gameToken: String,
@@ -11,6 +12,7 @@ pub struct PlayPayload {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct Coordinate {
     playerId: String,
     x: i32,

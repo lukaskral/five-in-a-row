@@ -1,4 +1,5 @@
 use crate::api::status::Coordinate;
+use crate::game::GameMove;
 use core::cmp::Ordering;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -39,12 +40,7 @@ impl FiveInRowMove {
         }
         return false;
     }
-    pub fn is_mine(&self) -> bool {
-        if let FiveInRowMove::Mine(_, _) = self {
-            return true;
-        }
-        return false;
-    }
+
     pub fn get_distance(&self, mv: &FiveInRowMove) -> i32 {
         let dif_x = -mv.get_x() + self.get_x();
         let dif_y = -mv.get_y() + self.get_y();
@@ -59,6 +55,15 @@ impl FiveInRowMove {
         vec.iter().fold(i32::MAX, |ret, mv| {
             i32::min(ret, self.get_distance(mv).abs())
         })
+    }
+}
+
+impl GameMove for FiveInRowMove {
+    fn is_mine(&self) -> bool {
+        match self {
+            FiveInRowMove::Mine(_, _) => true,
+            FiveInRowMove::Rivals(_, _) => false,
+        }
     }
 }
 
