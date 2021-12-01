@@ -100,6 +100,8 @@ async fn play(user_token: &str, user_id: &str) -> Result<String, game::error::Er
     let game = FiveInRow::from_api_coordinates(stat_data.coordinates, &user_id);
     let mut game_play = GamePlay::new(game);
 
+    let mut rival_info: Option<(String, Option<i32>)> = None;
+
     println!("New game 🃏: {:?}", game_token);
 
     loop {
@@ -118,6 +120,26 @@ async fn play(user_token: &str, user_id: &str) -> Result<String, game::error::Er
         } else {
             ("💀", "💻")
         };
+
+        if rival_info.is_none() {
+            let rival_id = if rivals_symbol == "❌" {
+                stat_data.playerCrossId
+            } else {
+                stat_data.playerCircleId
+            };
+            if let Some(id) = rival_id {
+                rival_info = api::player::fetch_player(&api::player::Payload {
+                    user_id: String::from(id),
+                })
+                .await
+                .map_or(Some((String::from("__unknown__"), None)), |rival| {
+                    Some((rival.name, rival.score))
+                });
+                if let Some(info) = &rival_info {
+                    println!("Playing against user: {}, score: {:?}", &info.0, &info.1);
+                }
+            }
+        }
 
         let maybe_coord = stat_data.coordinates.get(0);
         if let Some(coord) = maybe_coord {
