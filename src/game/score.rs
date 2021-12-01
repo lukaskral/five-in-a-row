@@ -9,6 +9,7 @@ pub enum Score {
 }
 
 impl Score {
+    #[allow(dead_code)]
     fn max<'a>(one: &'a Self, other: &'a Self) -> &'a Self {
         if *one > *other {
             one
@@ -16,6 +17,7 @@ impl Score {
             other
         }
     }
+    #[allow(dead_code)]
     fn min<'a>(one: &'a Self, other: &'a Self) -> &'a Self {
         if *one < *other {
             one
