@@ -8,7 +8,6 @@ mod game;
 mod gameplay;
 
 use five_in_row::{mv::FiveInRowMove, FiveInRow};
-use game::Game;
 use gameplay::GamePlay;
 use std::boxed::Box;
 use std::collections::VecDeque;

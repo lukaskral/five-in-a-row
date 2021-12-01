@@ -52,9 +52,6 @@ impl<G: Game> Suggestion<G> {
     pub fn get_suggestions(&self) -> &Vec<Suggestion<G>> {
         &self.suggestions
     }
-    pub fn get_mut_suggestions(&mut self) -> &mut Vec<Suggestion<G>> {
-        &mut self.suggestions
-    }
     pub fn add_suggestions(&mut self, parents: &VecDeque<G::Move>, add: Vec<Suggestion<G>>) {
         let mut parents = parents.clone();
         if parents.len() > 0 {
