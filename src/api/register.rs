@@ -16,6 +16,7 @@ pub struct RegisterResponse {
     pub userToken: String,
 }
 
+#[allow(dead_code)]
 pub async fn invoke_registration(
     client: &mut fetch::JobsApi,
     payload: &RegisterPayload,

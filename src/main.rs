@@ -8,8 +8,10 @@ mod game;
 mod gameplay;
 
 use five_in_row::{mv::FiveInRowMove, FiveInRow};
+use game::Game;
 use gameplay::GamePlay;
 use std::boxed::Box;
+use std::collections::VecDeque;
 use std::error::Error;
 use std::time::Instant;
 
@@ -130,12 +132,13 @@ async fn play(user_token: &str, user_id: &str) -> Result<String, game::error::Er
             );
         }
 
+        game_play.compute_suggestions(true, VecDeque::new(), 3)?;
         let maybe_suggestion = game_play.suggest_move(true);
         if let Ok(suggestion) = maybe_suggestion {
             println!(
                 "My move {}: {:?} ({} s)",
                 my_symbol,
-                suggestion,
+                suggestion.get_move(),
                 now.elapsed().as_secs()
             );
             let mv = suggestion.get_move();

@@ -3,6 +3,7 @@ pub mod suggestion;
 
 use crate::game::{error::Error, score::Score, Game};
 use crate::gameplay::suggestion::Suggestion;
+use std::collections::VecDeque;
 
 pub struct GamePlay<G: Game> {
     pub game: G,
@@ -20,7 +21,7 @@ impl<G: Game> GamePlay<G> {
     fn get_suggestions(
         &self,
         myself: bool,
-        parent_moves: &Vec<G::Move>,
+        parent_moves: &VecDeque<G::Move>,
     ) -> Result<Vec<Suggestion<G>>, Error<G>> {
         let mut game = self.game.clone();
         for parent_move in parent_moves.iter() {
@@ -36,83 +37,86 @@ impl<G: Game> GamePlay<G> {
                 match r {
                     Ok(_) => {
                         let score = game_test.get_score();
-                        Some(Suggestion(mv.to_owned(), score, Box::new(Vec::new())))
+                        Some(Suggestion::new(mv.to_owned(), score))
                     }
                     Err(_) => None,
                 }
             })
             .collect::<Vec<_>>();
 
-        let max_score = possibilities.iter().fold(Score::Loss, |max, pos| {
-            let Suggestion(_, score, _) = pos;
+        let (min_score, max_score) = possibilities.iter().fold(
             if myself {
-                Score::max(max, *score)
+                (Score::Win, Score::Loss)
             } else {
-                Score::min(max, *score)
-            }
-        });
+                (Score::Loss, Score::Win)
+            },
+            |(min, max), pos| {
+                let score = pos.get_deep_score();
+                if myself {
+                    (Score::min(min, *score), Score::max(max, *score))
+                } else {
+                    (Score::max(min, *score), Score::min(max, *score))
+                }
+            },
+        );
         let threshold = max_score;
 
         let mut suggestions = possibilities
             .iter()
             .filter(|p| {
                 if myself {
-                    *p.get_score() >= threshold - (threshold.abs() * 0.2)
+                    *p.get_deep_score() >= threshold - ((min_score - max_score).abs() * 0.3)
                 } else {
-                    *p.get_score() <= threshold + (threshold.abs() * 0.2)
+                    *p.get_deep_score() <= threshold + ((min_score - max_score).abs() * 0.3)
                 }
             })
             .map(|p| p.to_owned())
             .collect::<Vec<_>>();
-        suggestions.sort();
+
+        suggestions.sort_by(|a, b| b.get_deep_score().cmp(a.get_deep_score()));
         Ok(suggestions)
     }
 
     pub fn compute_suggestions(
         &mut self,
         myself: bool,
-        parent_moves: &Vec<G::Move>,
+        parents: VecDeque<G::Move>,
         depth: u8,
     ) -> Result<(), Error<G>> {
-        let suggestions = self.get_suggestions(myself, parent_moves)?;
-        if parent_moves.len() == 0 {
-            self.suggestions = suggestions;
+        let mut parents = parents.clone();
+        let suggestions = self.get_suggestions(myself, &parents)?;
+        if parents.len() == 0 {
+            self.suggestions = suggestions.clone();
         } else {
-            let mut maybe_suggestion: Option<&mut Suggestion<G>> = None;
-            for parent_move in parent_moves.iter() {
-                maybe_suggestion = if let Some(sug_ref) = maybe_suggestion {
-                    sug_ref
-                        .get_mut_suggestions()
-                        .iter_mut()
-                        .find(|s| s.get_move() == parent_move)
-                } else {
-                    self.suggestions
-                        .iter_mut()
-                        .find(|s| s.get_move() == parent_move)
-                };
+            let maybe_parent = parents.pop_front();
+            if let Some(parent) = maybe_parent {
+                let maybe_suggestion = self
+                    .suggestions
+                    .iter_mut()
+                    .find(|s| *s.get_move() == parent);
+                if let Some(suggestion) = maybe_suggestion {
+                    suggestion.add_suggestions(&parents, suggestions.clone());
+                }
             }
-            maybe_suggestion.map(|s| s.add_suggestions(suggestions));
         }
 
-        /* TODO
         if depth > 0 {
             for s in suggestions.iter() {
-                if s.get_score().is_finished() {
+                if s.get_deep_score().is_finished() {
                     continue;
                 }
-                let mut parents = parent_moves.clone();
-                parents.push(s.get_move().clone());
-                self.compute_suggestions(myself, &parents, depth - 1)?;
+                let mut parents = parents.clone();
+                parents.push_back(s.get_move().clone());
+                self.compute_suggestions(!myself, parents, depth - 1)?;
             }
         }
-        */
 
         Ok(())
     }
 
     pub fn suggest_move(&mut self, myself: bool) -> Result<Suggestion<G>, Error<G>> {
         if self.suggestions.len() == 0 {
-            self.compute_suggestions(myself, &Vec::new(), 0)?;
+            self.compute_suggestions(myself, VecDeque::new(), 0)?;
         }
         self.suggestions
             .get(0)
@@ -125,7 +129,10 @@ impl<G: Game> GamePlay<G> {
 
         // TODO don't clone
         self.suggestions = maybe_suggestion.map_or(Vec::new(), |s| (*s).get_suggestions().clone());
-        self.game.do_move(mv)
+        let res = self.game.do_move(mv);
+
+        Game::visualize(&self.game);
+        res
     }
 }
 
@@ -142,10 +149,11 @@ mod tests {
             FiveInRowMove::Rivals(0, 1),
             FiveInRowMove::Mine(0, -2),
             FiveInRowMove::Rivals(0, 2),
-            FiveInRowMove::Mine(0, -2),
+            FiveInRowMove::Mine(0, -3),
             FiveInRowMove::Rivals(0, 3),
         ]);
         let game = FiveInRow::from_moves(moves);
+        game.visualize();
         let mut game_play = GamePlay::new(game);
         let suggested = game_play.suggest_move(true).unwrap();
         assert_eq!(*suggested.get_move(), FiveInRowMove::Mine(0, 4));
@@ -158,10 +166,24 @@ mod tests {
             FiveInRowMove::Rivals(0, 1),
             FiveInRowMove::Mine(1, 0),
             FiveInRowMove::Rivals(0, 2),
+            FiveInRowMove::Mine(2, 0),
+            FiveInRowMove::Rivals(0, 3),
         ]);
         let game = FiveInRow::from_moves(moves);
+        game.visualize();
         let mut game_play = GamePlay::new(game);
+        game_play
+            .compute_suggestions(true, VecDeque::new(), 0)
+            .unwrap();
         let suggested = game_play.suggest_move(true).unwrap();
+        println!(
+            "{:?}",
+            game_play
+                .suggestions
+                .iter()
+                .map(|s| (s.get_move(), s.get_deep_score()))
+                .collect::<Vec<_>>()
+        );
         assert_eq!(*suggested.get_move(), FiveInRowMove::Mine(-1, 0));
     }
 
@@ -180,8 +202,89 @@ mod tests {
             FiveInRowMove::Rivals(2, 0),
         ]);
         let game = FiveInRow::from_moves(moves);
+        game.visualize();
         let mut game_play = GamePlay::new(game);
+        game_play
+            .compute_suggestions(true, VecDeque::new(), 1)
+            .unwrap();
         let suggested = game_play.suggest_move(true).unwrap();
         assert_eq!(*suggested.get_move(), FiveInRowMove::Mine(-2, -4));
+    }
+
+    #[test]
+    fn it_suggests_correct_move_4() {
+        let moves = Vec::from([
+            FiveInRowMove::Rivals(0, 0),
+            FiveInRowMove::Mine(-1, -1),
+            FiveInRowMove::Rivals(-1, 0),
+            FiveInRowMove::Mine(-2, 0),
+            FiveInRowMove::Rivals(-3, 1),
+            FiveInRowMove::Mine(-2, -1),
+            FiveInRowMove::Rivals(-3, -1),
+            FiveInRowMove::Mine(-2, 1),
+            FiveInRowMove::Rivals(-2, -2),
+            FiveInRowMove::Mine(-2, 2),
+            FiveInRowMove::Rivals(-2, 3),
+            FiveInRowMove::Mine(-1, 2),
+            FiveInRowMove::Rivals(-3, 0),
+            FiveInRowMove::Mine(-3, 2),
+            FiveInRowMove::Rivals(0, 2),
+            FiveInRowMove::Mine(-4, 2),
+            FiveInRowMove::Rivals(-5, 2),
+            FiveInRowMove::Mine(-3, -3),
+            FiveInRowMove::Rivals(-4, 0),
+            FiveInRowMove::Mine(-1, -3),
+            FiveInRowMove::Rivals(-5, 1),
+            FiveInRowMove::Mine(-6, 2),
+            FiveInRowMove::Rivals(-5, 3),
+            FiveInRowMove::Mine(-5, 4),
+            FiveInRowMove::Rivals(-6, 5),
+            FiveInRowMove::Mine(-5, 0),
+            FiveInRowMove::Rivals(0, 1),
+        ]);
+        let game = FiveInRow::from_moves(moves);
+        game.visualize();
+        let mut game_play = GamePlay::new(game);
+        game_play
+            .compute_suggestions(true, VecDeque::new(), 3)
+            .unwrap();
+        println!("{:?}", game_play.suggestions);
+        let suggested = game_play.suggest_move(true).unwrap();
+        assert_eq!(*suggested.get_move(), FiveInRowMove::Mine(0, -1));
+    }
+
+    #[test]
+    fn it_suggests_correct_move_5() {
+        let moves = Vec::from([
+            FiveInRowMove::Mine(0, 0),
+            FiveInRowMove::Rivals(0, 1),
+            FiveInRowMove::Mine(-1, -1),
+            FiveInRowMove::Rivals(0, 2),
+            FiveInRowMove::Mine(0, 3),
+            FiveInRowMove::Rivals(-1, 2),
+            FiveInRowMove::Mine(-1, 3),
+            FiveInRowMove::Rivals(1, 2),
+            FiveInRowMove::Mine(2, 2),
+            FiveInRowMove::Rivals(1, 1),
+            FiveInRowMove::Mine(1, 0),
+            FiveInRowMove::Rivals(-2, 2),
+            FiveInRowMove::Mine(-3, 2),
+            FiveInRowMove::Rivals(-2, 1),
+        ]);
+        let game = FiveInRow::from_moves(moves);
+        game.visualize();
+        let mut game_play = GamePlay::new(game);
+        game_play
+            .compute_suggestions(true, VecDeque::new(), 3)
+            .unwrap();
+        println!(
+            "{:?}",
+            game_play
+                .suggestions
+                .iter()
+                .map(|s| (s.get_move(), s.get_deep_score()))
+        );
+        let suggested = game_play.suggest_move(true).unwrap();
+        assert_eq!(*suggested.get_move(), FiveInRowMove::Mine(-1, 1));
     }
 }

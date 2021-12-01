@@ -16,9 +16,12 @@ pub struct FiveInRow {
 }
 
 impl FiveInRow {
+    #[allow(dead_code)]
     pub fn create_empty() -> Self {
         Self { moves: Vec::new() }
     }
+
+    #[allow(dead_code)]
     pub fn from_api_coordinates(resp: Vec<Coordinate>, player_id: &str) -> Self {
         let moves: Vec<FiveInRowMove> = resp
             .iter()
@@ -32,6 +35,8 @@ impl FiveInRow {
             .collect();
         Self { moves: moves }
     }
+
+    #[allow(dead_code)]
     pub fn from_moves(moves: Vec<FiveInRowMove>) -> Self {
         Self { moves: moves }
     }
@@ -106,9 +111,9 @@ impl FiveInRow {
             }
             score = Score::Numeric(1000.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 4 {
-            score = Score::Numeric(100.0 / f64::from(total_iter_dist));
+            score = Score::Numeric(200.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 3 {
-            score = Score::Numeric(10.0 / f64::from(total_iter_dist));
+            score = Score::Numeric(50.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 2 {
             score = Score::Numeric(4.0 / f64::from(total_iter_dist));
         } else {
@@ -117,15 +122,23 @@ impl FiveInRow {
 
         if let Some(l_cl) = l_closing {
             let l_gap = l_item.get_distance(l_cl).abs();
-            if l_gap <= 2 {
-                score = score * (1.0 - (1.0 / (1.0 + f64::from(l_gap))));
+            if l_gap <= 1 {
+                score = score * 0.5;
+            } else if l_gap <= 2 {
+                score = score * 0.99;
+            } else if l_gap <= 3 {
+                score = score * 0.99;
             }
         }
 
         if let Some(r_cl) = r_closing {
             let r_gap = r_item.get_distance(r_cl).abs();
-            if r_gap <= 2 {
-                score = score * (1.0 - (1.0 / (1.0 + f64::from(r_gap))));
+            if r_gap <= 1 {
+                score = score * 0.5;
+            } else if r_gap <= 2 {
+                score = score * 0.99;
+            } else if r_gap <= 3 {
+                score = score * 0.99;
             }
         }
 
@@ -205,6 +218,56 @@ impl Game for FiveInRow {
                 }
             })
             .collect::<Vec<_>>()
+    }
+
+    fn visualize(&self) {
+        let (min_x, max_x, min_y, max_y) = self.moves.iter().map(|m| (m.get_x(), m.get_y())).fold(
+            (i32::MAX, i32::MIN, i32::MAX, i32::MIN),
+            |(min_x, max_x, min_y, max_y), (x, y)| {
+                (
+                    min_x.min(x - 1),
+                    max_x.max(x + 1),
+                    min_y.min(y - 1),
+                    max_y.max(y + 1),
+                )
+            },
+        );
+        let mut x: i32;
+        let mut y = max_y;
+        x = min_x;
+        while x <= max_x {
+            print!(
+                "  {}{}{} ",
+                if x < 0 { "" } else { " " },
+                x,
+                if x.abs() < 10 { " " } else { "" }
+            );
+            x += 1;
+        }
+        println!("");
+        while x <= max_x {
+            print!("┼─────");
+            x += 1;
+        }
+        while y >= min_y {
+            x = min_x;
+            while x <= max_x {
+                let mv = self.moves.iter().find(|m| m.get_x() == x && m.get_y() == y);
+                print!(
+                    "│  {}  ",
+                    mv.map_or(" ", |m| if m.is_mine() { "X" } else { "O" })
+                );
+                x += 1;
+            }
+            println!("│ {}", y);
+            x = min_x;
+            while x <= max_x {
+                print!("┼─────");
+                x += 1;
+            }
+            println!("┼");
+            y -= 1;
+        }
     }
 }
 
