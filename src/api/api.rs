@@ -4,6 +4,8 @@ pub mod connect;
 pub mod fetch;
 #[path = "play.rs"]
 pub mod play;
+#[path = "player.rs"]
+pub mod player;
 #[path = "register.rs"]
 pub mod register;
 #[path = "status.rs"]

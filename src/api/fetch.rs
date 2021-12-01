@@ -11,6 +11,7 @@ use std::time::Instant;
 pub enum Error {
     ApiErr(reqwest::Error),
     JsonErr(serde_json::Error),
+    ParseError,
     TimeError(std::num::TryFromIntError),
     RivalTimeoutError,
     FinishedUnexpectedly,
@@ -37,6 +38,7 @@ impl Display for Error {
             Self::ApiErr(_) => write!(f, "Api Error"),
             Self::JsonErr(_) => write!(f, "Json Error"),
             Self::TimeError(_) => write!(f, "Time Error"),
+            Self::ParseError => write!(f, "Parse Error"),
             Self::RivalTimeoutError => write!(f, "Rival Time Out Error"),
             Self::FinishedUnexpectedly => write!(f, "Finished unexpectedly"),
             Self::Invalid => write!(f, "Invalid request or auth"),
@@ -49,6 +51,7 @@ impl StdError for Error {
             Self::ApiErr(err) => Some(err),
             Self::JsonErr(err) => Some(err),
             Self::TimeError(err) => Some(err),
+            Self::ParseError => None,
             Self::RivalTimeoutError => None,
             Self::FinishedUnexpectedly => None,
             Self::Invalid => None,
