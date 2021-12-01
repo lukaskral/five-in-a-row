@@ -13,6 +13,8 @@ pub enum Error {
     JsonErr(serde_json::Error),
     TimeError(std::num::TryFromIntError),
     RivalTimeoutError,
+    FinishedUnexpectedly,
+    Invalid,
 }
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
@@ -36,6 +38,8 @@ impl Display for Error {
             Self::JsonErr(_) => write!(f, "Json Error"),
             Self::TimeError(_) => write!(f, "Time Error"),
             Self::RivalTimeoutError => write!(f, "Rival Time Out Error"),
+            Self::FinishedUnexpectedly => write!(f, "Finished unexpectedly"),
+            Self::Invalid => write!(f, "Invalid request or auth"),
         }
     }
 }
@@ -46,6 +50,8 @@ impl StdError for Error {
             Self::JsonErr(err) => Some(err),
             Self::TimeError(err) => Some(err),
             Self::RivalTimeoutError => None,
+            Self::FinishedUnexpectedly => None,
+            Self::Invalid => None,
         }
     }
 }

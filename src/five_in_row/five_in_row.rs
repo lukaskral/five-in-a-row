@@ -125,7 +125,7 @@ impl FiveInRow {
             if l_gap <= 1 {
                 score = score * 0.5;
             } else if l_gap <= 2 {
-                score = score * 0.99;
+                score = score * 0.8;
             } else if l_gap <= 3 {
                 score = score * 0.99;
             }
@@ -136,7 +136,7 @@ impl FiveInRow {
             if r_gap <= 1 {
                 score = score * 0.5;
             } else if r_gap <= 2 {
-                score = score * 0.99;
+                score = score * 0.8;
             } else if r_gap <= 3 {
                 score = score * 0.99;
             }
