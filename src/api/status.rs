@@ -72,7 +72,7 @@ pub async fn wait_my_turn(
                     reported = true;
                     println!("Waiting for rival's move...");
                 }
-                if time.elapsed().as_secs() > 180 {
+                if time.elapsed().as_secs() > 300 {
                     return Err(fetch::Error::RivalTimeoutError);
                 }
             }
@@ -87,6 +87,12 @@ pub async fn wait_my_turn(
         }
         if let Some(_) = maybe_winner_id {
             return Ok(last_status);
+        }
+        if last_status.statusCode == 226 {
+            return Err(fetch::Error::FinishedUnexpectedly);
+        }
+        if last_status.statusCode >= 400 {
+            return Err(fetch::Error::Invalid);
         }
     }
 }

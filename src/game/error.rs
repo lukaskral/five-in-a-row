@@ -9,24 +9,30 @@ pub enum Error<G: Game + Debug> {
     IncorrectMove(G::Move),
     NoSuggestionAvailable,
     ApiError(fetch::Error),
+    FinishedUnexpectedly,
+    Invalid,
 }
 
 impl<G: Game + Debug> From<fetch::Error> for Error<G> {
     fn from(e: fetch::Error) -> Self {
-        if let fetch::Error::RivalTimeoutError = e {
-            return Self::TimeoutError;
+        match e {
+            fetch::Error::RivalTimeoutError => Self::TimeoutError,
+            fetch::Error::FinishedUnexpectedly => Self::FinishedUnexpectedly,
+            fetch::Error::Invalid => Self::Invalid,
+            _ => Self::ApiError(e),
         }
-        Self::ApiError(e)
     }
 }
 
 impl<G: Game + Debug> Display for Error<G> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Error::TimeoutError => write!(f, "Timeout Error"),
-            Error::IncorrectMove(mv) => write!(f, "The move is not valid ({:?})", mv),
-            Error::NoSuggestionAvailable => write!(f, "No suggestion available"),
-            Error::ApiError(fetch_error) => write!(f, "Api call failed! ({:?})", fetch_error),
+            Self::TimeoutError => write!(f, "Timeout Error"),
+            Self::IncorrectMove(mv) => write!(f, "The move is not valid ({:?})", mv),
+            Self::NoSuggestionAvailable => write!(f, "No suggestion available"),
+            Self::ApiError(fetch_error) => write!(f, "Api call failed! ({:?})", fetch_error),
+            Self::FinishedUnexpectedly => write!(f, "Finished unexpectedly"),
+            Self::Invalid => write!(f, "Invalid request or auth"),
         }
     }
 }
