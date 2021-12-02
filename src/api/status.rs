@@ -72,7 +72,7 @@ pub async fn wait_my_turn(
                     reported = true;
                     println!("Waiting for rival's move...");
                 }
-                if time.elapsed().as_secs() > 300 {
+                if time.elapsed().as_secs() > 180 {
                     return Err(fetch::Error::RivalTimeoutError);
                 }
             }
@@ -81,7 +81,7 @@ pub async fn wait_my_turn(
                 reported = true;
                 println!("Waiting for rival to connect...");
             }
-            if time.elapsed().as_secs() > 300 {
+            if time.elapsed().as_secs() > 900 {
                 return Err(fetch::Error::RivalTimeoutError);
             }
         }
