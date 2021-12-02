@@ -111,7 +111,7 @@ impl FiveInRow {
             }
             score = Score::Numeric(1000.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 4 {
-            score = Score::Numeric(200.0 / f64::from(total_iter_dist));
+            score = Score::Numeric(220.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 3 {
             score = Score::Numeric(50.0 / f64::from(total_iter_dist));
         } else if total_iter_cnt >= 2 {
@@ -163,7 +163,9 @@ impl Game for FiveInRow {
                         .iter()
                         .filter(|i| direction.is_in_direction(i.get_x(), i.get_y()))
                         .collect::<Vec<_>>();
-                    res + FiveInRow::score_from_row(&mv, &items)
+
+                    let score = FiveInRow::score_from_row(&mv, &items);
+                    res + score
                 },
             )
         });
@@ -378,13 +380,39 @@ mod tests {
             ]),
         );
 
+        let score_oxxxxo = FiveInRow::score_from_row(
+            &mv,
+            &Vec::from([
+                &FiveInRowMove::Rivals(0, -1),
+                &mv,
+                &FiveInRowMove::Mine(0, 1),
+                &FiveInRowMove::Mine(0, 2),
+                &FiveInRowMove::Mine(0, 3),
+                &FiveInRowMove::Rivals(0, 4),
+            ]),
+        );
+
+        let score_oxxxxeo = FiveInRow::score_from_row(
+            &mv,
+            &Vec::from([
+                &FiveInRowMove::Rivals(0, -1),
+                &mv,
+                &FiveInRowMove::Mine(0, 1),
+                &FiveInRowMove::Mine(0, 2),
+                &FiveInRowMove::Mine(0, 3),
+                &FiveInRowMove::Rivals(0, 5),
+            ]),
+        );
+
+        assert!(score_oxxxxo < score_x);
         assert!(score_x < score_xx);
         assert!(score_xx < score_xxx);
-        assert!(score_xxx < score_xxxx);
+        assert!(score_xxx < score_oxxxxeo);
+        assert!(score_oxxxxeo < score_xxxx);
         assert!(score_xxxx < score_xxxxx);
         assert!(score_xxxx < score_xxxxex);
         assert_ne!(score_xxxxex, Score::Win);
-
+        assert_eq!(score_oxxxxo, Score::Numeric(0.0));
         assert_eq!(score_xxxxx, Score::Win);
         assert_eq!(score_ooooo, Score::Loss);
 
@@ -392,7 +420,7 @@ mod tests {
     }
 
     #[test]
-    fn it_replays_last_game() {
+    fn it_replays_game_1() {
         let moves = Vec::from([
             FiveInRowMove::Mine(0, 0),
             FiveInRowMove::Rivals(0, 1),

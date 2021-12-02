@@ -96,6 +96,9 @@ mod tests {
         assert_eq!(mv.is_same_type(Some(&FiveInRowMove::Rivals(3, 4))), false);
         assert_eq!(mv.is_same_type(Some(&FiveInRowMove::Mine(3, 4))), true);
         assert_eq!(mv.is_same_type(None), false);
+
+        assert_eq!(GameMove::is_mine(&mv), true);
+        assert_eq!(GameMove::is_mine(&FiveInRowMove::Rivals(1, 2)), false);
     }
 
     #[test]

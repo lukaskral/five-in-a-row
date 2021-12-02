@@ -52,23 +52,35 @@ impl<G: Game> Suggestion<G> {
     pub fn get_suggestions(&self) -> &Vec<Suggestion<G>> {
         &self.suggestions
     }
-    pub fn add_suggestions(&mut self, parents: &VecDeque<G::Move>, add: Vec<Suggestion<G>>) {
-        let mut parents = parents.clone();
+    pub fn add_suggestions(
+        &mut self,
+        parents: &VecDeque<G::Move>,
+        add: Vec<Suggestion<G>>,
+    ) -> Result<(), Error<G>> {
         if parents.len() > 0 {
-            let maybe_parent = parents.pop_front();
-            if let Some(parent) = maybe_parent {
-                let maybe_suggestion = self
-                    .suggestions
-                    .iter_mut()
-                    .find(|s| *s.get_move() == parent);
-                if let Some(suggestion) = maybe_suggestion {
-                    suggestion.add_suggestions(&parents, add.clone());
-                    self.depth = suggestion.depth + 1;
-                }
-            }
+            Self::extend_suggestions(&mut self.suggestions, parents, add)?;
+        } else {
+            self.depth = u8::max(1, self.depth);
+            self.suggestions.extend(add);
         }
-        self.depth = u8::max(1, self.depth);
-        self.suggestions.extend(add);
+        Ok(())
+    }
+
+    pub fn extend_suggestions(
+        vec: &mut Vec<Suggestion<G>>,
+        parents: &VecDeque<G::Move>,
+        add: Vec<Suggestion<G>>,
+    ) -> Result<(), Error<G>> {
+        let mut parents = parents.clone();
+        let parent = parents
+            .pop_front()
+            .map_or(Err(Error::SuggestionComputationError), |p| Ok(p))?;
+        let suggestion = vec
+            .iter_mut()
+            .find(|s| *s.get_move() == parent)
+            .map_or(Err(Error::SuggestionComputationError), |s| Ok(s))?;
+        suggestion.add_suggestions(&parents, add)?;
+        Ok(())
     }
 }
 
@@ -112,15 +124,16 @@ mod tests {
     fn it_computes_deep_score() {
         let mut suggestion =
             Suggestion::<FiveInRow>::new(FiveInRowMove::Mine(0, 0), Score::Numeric(1.0));
-        let parents = VecDeque::new();
-        suggestion.add_suggestions(
-            &parents,
-            vec![
-                Suggestion::new(FiveInRowMove::Rivals(1, 0), Score::Numeric(0.0)),
-                Suggestion::new(FiveInRowMove::Rivals(1, 1), Score::Numeric(-1.0)),
-                Suggestion::new(FiveInRowMove::Rivals(1, -1), Score::Numeric(2.0)),
-            ],
-        );
+        suggestion
+            .add_suggestions(
+                &VecDeque::new(),
+                vec![
+                    Suggestion::new(FiveInRowMove::Rivals(1, 0), Score::Numeric(0.0)),
+                    Suggestion::new(FiveInRowMove::Rivals(1, 1), Score::Numeric(-1.0)),
+                    Suggestion::new(FiveInRowMove::Rivals(1, -1), Score::Numeric(2.0)),
+                ],
+            )
+            .unwrap();
         assert_eq!(*suggestion.get_score(), Score::Numeric(1.0));
         assert_eq!(*suggestion.get_deep_score(), Score::Numeric(-1.0));
     }
