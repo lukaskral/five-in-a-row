@@ -107,10 +107,12 @@ impl<G: Game> GamePlay<G> {
             }
         }
         suggestions.sort_by(|a, b| {
+            let sc_a = a.get_deep_score();
+            let sc_b = b.get_deep_score();
             if myself {
-                b.get_deep_score().cmp(a.get_deep_score())
+                sc_b.cmp(&sc_a)
             } else {
-                a.get_deep_score().cmp(b.get_deep_score())
+                sc_a.cmp(&sc_b)
             }
         });
         Ok(suggestions)
