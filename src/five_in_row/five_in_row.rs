@@ -190,7 +190,7 @@ impl Game for FiveInRow {
             vec.push(FiveInRowMove::Mine(0, 0));
             return vec;
         }
-        for x in -20..20 {
+        for x in -29..28 {
             for y in -20..20 {
                 let m = self.moves.iter().find(|m| m.get_x() == x && m.get_y() == y);
                 let maybe_move = match m {
@@ -204,22 +204,13 @@ impl Game for FiveInRow {
                     Some(_) => None,
                 };
                 if let Some(mv) = maybe_move {
-                    if mv.get_distance_from_moves(&self.moves) <= 5 {
+                    if mv.get_distance_from_moves(&self.moves) <= 3 {
                         vec.push(mv);
                     }
                 }
             }
         }
-        vec.iter()
-            .to_owned()
-            .filter_map(|mv| {
-                if mv.get_distance_from_moves(&self.moves) <= 5 {
-                    Some(mv.to_owned())
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>()
+        vec
     }
 
     fn visualize(&self) {

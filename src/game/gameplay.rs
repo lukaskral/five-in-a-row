@@ -51,7 +51,7 @@ impl<G: Game> GamePlay<G> {
                 (Score::Loss, Score::Win)
             },
             |(min, max), pos| {
-                let score = pos.get_deep_score();
+                let score = pos.get_score();
                 if myself {
                     (Score::min(min, *score), Score::max(max, *score))
                 } else {
@@ -63,25 +63,25 @@ impl<G: Game> GamePlay<G> {
 
         possibilities.sort_by(|a, b| {
             if myself {
-                b.get_score().cmp(a.get_deep_score())
+                b.get_score().cmp(&a.get_score())
             } else {
-                a.get_score().cmp(b.get_deep_score())
+                a.get_score().cmp(&b.get_score())
             }
         });
         let mut suggestions = possibilities
             .iter()
             .filter(|p| {
                 if myself {
-                    *p.get_deep_score() >= threshold - ((min_score - max_score).abs() * 0.5)
+                    *p.get_score() >= threshold - ((min_score - max_score).abs() * 0.5)
                 } else {
-                    *p.get_deep_score() <= threshold + ((min_score - max_score).abs() * 0.5)
+                    *p.get_score() <= threshold + ((min_score - max_score).abs() * 0.5)
                 }
             })
             .map(|p| p.to_owned())
             .collect::<Vec<_>>();
 
-        if suggestions.len() > 12 {
-            suggestions = suggestions[0..11].to_vec()
+        if suggestions.len() > 8 {
+            suggestions = suggestions[0..7].to_vec()
         }
         Ok(suggestions)
     }
