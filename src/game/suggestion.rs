@@ -6,6 +6,7 @@ use std::collections::VecDeque;
 pub struct Suggestion<G: Game> {
     mv: G::Move,
     score: Score,
+    deep_score: Option<Score>,
     suggestions: Box<Vec<Suggestion<G>>>,
     depth: u8,
 }
@@ -16,6 +17,7 @@ impl<G: Game> Suggestion<G> {
             mv: mv,
             score: score,
             suggestions: Box::new(Vec::new()),
+            deep_score: None,
             depth: 0,
         }
     }
@@ -25,28 +27,36 @@ impl<G: Game> Suggestion<G> {
     pub fn get_score(&self) -> &Score {
         return &self.score;
     }
-    pub fn get_deep_score(&self) -> &Score {
-        if self.depth == 0 {
+
+    pub fn compute_deep_score(&self) -> &Score {
+        if self.depth == 0 || self.suggestions.len() == 0 {
             return self.get_score();
         }
         let scores: Vec<&Score> = self
             .suggestions
             .iter()
-            .map(|s| s.get_deep_score())
+            .map(|s| s.compute_deep_score())
             .collect::<Vec<_>>();
 
         let score_result: Result<&Score, Error<G>> = if GameMove::is_mine(self.get_move()) {
             scores
                 .iter()
                 .min()
-                .map_or(Err(Error::NoSuggestionAvailable), |s| Ok(s))
+                .map_or(Err(Error::DeepScoreComputationError), |s| Ok(s))
         } else {
             scores
                 .iter()
                 .max()
-                .map_or(Err(Error::NoSuggestionAvailable), |s| Ok(s))
+                .map_or(Err(Error::DeepScoreComputationError), |s| Ok(s))
         };
         return score_result.unwrap();
+    }
+
+    pub fn get_deep_score(&self) -> Score {
+        if self.depth == 0 {
+            return self.get_score().clone();
+        }
+        self.deep_score.unwrap()
     }
 
     pub fn get_suggestions(&self) -> &Vec<Suggestion<G>> {
@@ -59,9 +69,13 @@ impl<G: Game> Suggestion<G> {
     ) -> Result<(), Error<G>> {
         if parents.len() > 0 {
             Self::extend_suggestions(&mut self.suggestions, parents, add)?;
+            let deep_score = self.compute_deep_score();
+            self.deep_score = Some(deep_score.clone());
         } else {
             self.depth = u8::max(1, self.depth);
             self.suggestions.extend(add);
+            let deep_score = self.compute_deep_score();
+            self.deep_score = Some(deep_score.clone());
         }
         Ok(())
     }
@@ -135,6 +149,6 @@ mod tests {
             )
             .unwrap();
         assert_eq!(*suggestion.get_score(), Score::Numeric(1.0));
-        assert_eq!(*suggestion.get_deep_score(), Score::Numeric(-1.0));
+        assert_eq!(suggestion.get_deep_score(), Score::Numeric(-1.0));
     }
 }
