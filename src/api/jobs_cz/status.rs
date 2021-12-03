@@ -1,4 +1,4 @@
-use crate::api::fetch;
+use crate::api::jobs_cz::fetch;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
 use std::vec::Vec;

@@ -1,21 +1,33 @@
 #[path = "suggestion.rs"]
 pub mod suggestion;
 
+use crate::api::game_connection::GameConnection;
 use crate::game::{error::Error, score::Score, Game};
 use crate::gameplay::suggestion::Suggestion;
 use std::collections::VecDeque;
 
-pub struct GamePlay<G: Game> {
+pub struct GamePlay<G: Game, C: GameConnection<G>> {
     pub game: G,
     pub suggestions: Vec<Suggestion<G>>,
+    pub connection: Option<C>,
 }
 
-impl<G: Game> GamePlay<G> {
-    pub fn new(game: G) -> Self {
+impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
+    #[allow(dead_code)]
+    pub fn from_game(game: G) -> Self {
         Self {
             game: game,
             suggestions: Vec::new(),
+            connection: None,
         }
+    }
+
+    pub async fn from_api(api: &mut C) -> Result<Self, Error<G>> {
+        Ok(Self {
+            game: api.start_game().await?,
+            suggestions: Vec::new(),
+            connection: None,
+        })
     }
 
     fn get_single_level_suggestions(
@@ -155,12 +167,59 @@ impl<G: Game> GamePlay<G> {
         Game::visualize(&self.game);
         res
     }
+
+    pub async fn play(&mut self) -> Result<String, Error<G>> {
+        loop {
+            let (maybe_rivals_move, maybe_winner) = self
+                .connection
+                .as_mut()
+                .ok_or(Error::Invalid)?
+                .await_move()
+                .await?;
+            if let Some(winner) = maybe_winner {
+                break Ok(winner);
+            }
+            if let Some(rivals_move) = maybe_rivals_move {
+                self.add_move(rivals_move)?;
+                println!("Rival's move: {:?}", rivals_move,);
+            }
+            self.compute_suggestions(true, VecDeque::new(), 3)?;
+            let maybe_suggestion = self.suggest_move(true);
+            if let Ok(suggestion) = maybe_suggestion {
+                println!("My move: {:?}", suggestion.get_move(),);
+                let mv = suggestion.get_move();
+                self.connection
+                    .as_mut()
+                    .ok_or(Error::Invalid)?
+                    .put_move(mv)
+                    .await?;
+                self.add_move(*mv)?;
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::five_in_row::{mv::FiveInRowMove, FiveInRow};
+    use async_trait::async_trait;
+
+    pub struct MockConnection {}
+    #[async_trait]
+    impl GameConnection<FiveInRow> for MockConnection {
+        async fn start_game(&mut self) -> Result<FiveInRow, Error<FiveInRow>> {
+            Err(Error::Invalid)
+        }
+        async fn put_move(&mut self, _: &FiveInRowMove) -> Result<(), Error<FiveInRow>> {
+            Ok(())
+        }
+        async fn await_move(
+            &mut self,
+        ) -> Result<(Option<FiveInRowMove>, Option<String>), Error<FiveInRow>> {
+            Err(Error::Invalid)
+        }
+    }
 
     #[test]
     fn it_suggests_correct_move_1() {
@@ -175,7 +234,7 @@ mod tests {
         ]);
         let game = FiveInRow::from_moves(moves);
         game.visualize();
-        let mut game_play = GamePlay::new(game);
+        let mut game_play = GamePlay::<FiveInRow, MockConnection>::from_game(game);
         let suggested = game_play.suggest_move(true).unwrap();
         assert_eq!(*suggested.get_move(), FiveInRowMove::Mine(0, 4));
     }
@@ -192,7 +251,7 @@ mod tests {
         ]);
         let game = FiveInRow::from_moves(moves);
         game.visualize();
-        let mut game_play = GamePlay::new(game);
+        let mut game_play = GamePlay::<FiveInRow, MockConnection>::from_game(game);
         game_play
             .compute_suggestions(true, VecDeque::new(), 0)
             .unwrap();
@@ -216,7 +275,7 @@ mod tests {
         ]);
         let game = FiveInRow::from_moves(moves);
         game.visualize();
-        let mut game_play = GamePlay::new(game);
+        let mut game_play = GamePlay::<FiveInRow, MockConnection>::from_game(game);
         game_play
             .compute_suggestions(true, VecDeque::new(), 1)
             .unwrap();
@@ -257,7 +316,7 @@ mod tests {
         ]);
         let game = FiveInRow::from_moves(moves);
         game.visualize();
-        let mut game_play = GamePlay::new(game);
+        let mut game_play = GamePlay::<FiveInRow, MockConnection>::from_game(game);
         game_play
             .compute_suggestions(true, VecDeque::new(), 2)
             .unwrap();
@@ -291,7 +350,7 @@ mod tests {
         ]);
         let game = FiveInRow::from_moves(moves);
         game.visualize();
-        let mut game_play = GamePlay::new(game);
+        let mut game_play = GamePlay::<FiveInRow, MockConnection>::from_game(game);
         game_play
             .compute_suggestions(true, VecDeque::new(), 3)
             .unwrap();
@@ -324,7 +383,7 @@ mod tests {
         ]);
         let game = FiveInRow::from_moves(moves);
         game.visualize();
-        let mut game_play = GamePlay::new(game);
+        let mut game_play = GamePlay::<FiveInRow, MockConnection>::from_game(game);
         game_play
             .compute_suggestions(true, VecDeque::new(), 2)
             .unwrap();
