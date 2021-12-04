@@ -1,12 +1,4 @@
-#[path = "connect.rs"]
-pub mod connect;
-#[path = "fetch.rs"]
-pub mod fetch;
-#[path = "play.rs"]
-pub mod play;
-#[path = "player.rs"]
-pub mod player;
-#[path = "register.rs"]
-pub mod register;
-#[path = "status.rs"]
-pub mod status;
+#[path = "game_connection.rs"]
+pub mod game_connection;
+#[path = "jobs_cz/jobs_cz.rs"]
+pub mod jobs_cz;

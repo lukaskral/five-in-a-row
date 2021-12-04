@@ -59,6 +59,7 @@ impl StdError for Error {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct JobsApi {
     client: reqwest::Client,
     time: Instant,

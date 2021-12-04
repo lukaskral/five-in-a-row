@@ -1,5 +1,5 @@
-use crate::api::fetch;
-use crate::api::status;
+use crate::api::jobs_cz::fetch;
+use crate::api::jobs_cz::status;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

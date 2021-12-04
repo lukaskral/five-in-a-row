@@ -1,4 +1,4 @@
-use crate::api::fetch;
+use crate::api::jobs_cz::fetch;
 use crate::game::Game;
 use std::error::Error as StdError;
 use std::fmt::{self, Debug, Display, Formatter};
@@ -11,6 +11,7 @@ pub enum Error<G: Game + Debug> {
     SuggestionComputationError,
     DeepScoreComputationError,
     ApiError(fetch::Error),
+    ApiInvalidData,
     FinishedUnexpectedly,
     Invalid,
 }
@@ -35,6 +36,7 @@ impl<G: Game + Debug> Display for Error<G> {
             Self::SuggestionComputationError => write!(f, "Suggestion computation error"),
             Self::DeepScoreComputationError => write!(f, "Deep score computation error"),
             Self::ApiError(fetch_error) => write!(f, "Api call failed! ({:?})", fetch_error),
+            Self::ApiInvalidData => write!(f, "Api invalid data"),
             Self::FinishedUnexpectedly => write!(f, "Finished unexpectedly"),
             Self::Invalid => write!(f, "Invalid request or auth"),
         }
