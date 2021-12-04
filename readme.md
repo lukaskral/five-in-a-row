@@ -1,4 +1,5 @@
 # Five in a row bot
+[![Rust](https://github.com/lukaskral/five-in-a-row/actions/workflows/rust.yml/badge.svg)](https://github.com/lukaskral/five-in-a-row/actions/workflows/rust.yml)
 
 A simple bot that plays Gomoku game against other bots on the [piskvorky.jobs.cz](https://piskvorky.jobs.cz/) server.
 
