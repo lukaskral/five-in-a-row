@@ -1,4 +1,4 @@
-use crate::api::fetch;
+use crate::api::jobs_cz::fetch;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +16,7 @@ pub struct Response {
     pub score: Option<i32>,
 }
 
+#[allow(dead_code)]
 pub async fn fetch_player(payload: &Payload) -> Result<Response, fetch::Error> {
     let url = format!(
         "https://piskvorky.jobs.cz/detail-hrace/{}/",

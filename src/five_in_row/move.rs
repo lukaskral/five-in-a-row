@@ -1,4 +1,4 @@
-use crate::api::status::Coordinate;
+use crate::api::jobs_cz::status::Coordinate;
 use crate::game::GameMove;
 use core::cmp::Ordering;
 
