@@ -16,6 +16,7 @@ use crate::five_in_row::{mv::FiveInRowMove, FiveInRow};
 use crate::game::error::Error;
 use async_trait::async_trait;
 
+#[derive(Debug, Clone)]
 pub struct JobsApi {
     user_id: String,
     user_token: String,

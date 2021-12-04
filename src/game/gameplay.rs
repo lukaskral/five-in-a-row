@@ -22,11 +22,12 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
         }
     }
 
-    pub async fn from_api(api: &mut C) -> Result<Self, Error<G>> {
+    pub async fn from_api(mut api: C) -> Result<Self, Error<G>> {
+        let game = api.start_game().await?;
         Ok(Self {
-            game: api.start_game().await?,
+            game,
             suggestions: Vec::new(),
-            connection: None,
+            connection: Some(api),
         })
     }
 
@@ -169,13 +170,11 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
     }
 
     pub async fn play(&mut self) -> Result<String, Error<G>> {
-        loop {
-            let (maybe_rivals_move, maybe_winner) = self
-                .connection
-                .as_mut()
-                .ok_or(Error::Invalid)?
-                .await_move()
-                .await?;
+        let result = loop {
+            let (maybe_rivals_move, maybe_winner) = {
+                let connection = self.connection.as_mut().ok_or(Error::Invalid)?;
+                connection.await_move().await?
+            };
             if let Some(winner) = maybe_winner {
                 break Ok(winner);
             }
@@ -188,14 +187,14 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
             if let Ok(suggestion) = maybe_suggestion {
                 println!("My move: {:?}", suggestion.get_move(),);
                 let mv = suggestion.get_move();
-                self.connection
-                    .as_mut()
-                    .ok_or(Error::Invalid)?
-                    .put_move(mv)
-                    .await?;
+                {
+                    let connection = self.connection.as_mut().ok_or(Error::Invalid)?;
+                    connection.put_move(mv).await?;
+                }
                 self.add_move(*mv)?;
             }
-        }
+        };
+        result
     }
 }
 

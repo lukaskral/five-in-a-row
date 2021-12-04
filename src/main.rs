@@ -38,13 +38,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut wins = 0;
     let mut losses = 0;
     let mut errors = 0;
-    let mut api = api::jobs_cz::JobsApi::new(&user_id, &user_token);
+    let api = api::jobs_cz::JobsApi::new(&user_id, &user_token);
 
     loop {
         gameplays = gameplays + 1;
 
         // create a new game
-        let mut maybe_game_play = gameplay::GamePlay::from_api(&mut api).await;
+        let mut maybe_game_play = gameplay::GamePlay::from_api(api.clone()).await;
         if let Ok(game_play) = maybe_game_play.as_mut() {
             // start to play and wait for the winner id
             let maybe_winner = game_play.play().await;
