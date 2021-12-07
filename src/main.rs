@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let api = api::jobs_cz::JobsApi::new(&user_id, &user_token);
 
     loop {
-        gameplays = gameplays + 1;
+        gameplays += 1;
 
         // create a new game
         let mut maybe_game_play = gameplay::GamePlay::from_api(api.clone()).await;
@@ -51,19 +51,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             if let Ok(winner) = maybe_winner {
                 if winner.eq(&user_id) {
-                    wins = wins + 1;
+                    wins += 1;
                     println!("I won the game ✌🥇");
                 } else {
-                    losses = losses + 1;
+                    losses += 1;
                     println!("I lost the game 😢");
                 }
             } else {
                 println!("No winner");
-                errors = errors + 1;
+                errors += 1;
             }
         } else {
             println!("Error in the game 😢");
-            errors = errors + 1;
+            errors += 1;
         }
 
         println!("==========================\n\n");

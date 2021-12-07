@@ -69,7 +69,7 @@ pub struct JobsApi {
 impl JobsApi {
     pub fn new(client: reqwest::Client) -> Self {
         Self {
-            client: client,
+            client,
             time: Instant::now(),
             last_call: 0,
         }

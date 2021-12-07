@@ -27,18 +27,18 @@ impl FiveInRow {
             .iter()
             .map(|c| {
                 if player_id.eq(&c.playerId) {
-                    return FiveInRowMove::Mine(c.x, c.y);
+                    FiveInRowMove::Mine(c.x, c.y)
                 } else {
-                    return FiveInRowMove::Rivals(c.x, c.y);
+                    FiveInRowMove::Rivals(c.x, c.y)
                 }
             })
             .collect();
-        Self { moves: moves }
+        Self { moves }
     }
 
     #[allow(dead_code)]
     pub fn from_moves(moves: Vec<FiveInRowMove>) -> Self {
-        Self { moves: moves }
+        Self { moves }
     }
 
     fn score_from_row(mv: &FiveInRowMove, vec: &Vec<&FiveInRowMove>) -> Score {
@@ -55,7 +55,7 @@ impl FiveInRow {
             let maybe_current = moves.get(i);
             if let Some(current) = maybe_current {
                 if mv.is_same_type(Some(current)) {
-                    total_iter_cnt = total_iter_cnt + 1;
+                    total_iter_cnt += 1;
                     r_item = current;
                 } else {
                     r_closing = Some(*current);
@@ -67,7 +67,7 @@ impl FiveInRow {
             if i >= moves.len() - 1 {
                 break;
             }
-            i = i + 1;
+            i += 1;
         }
 
         let mut l_item = mv;
@@ -89,9 +89,9 @@ impl FiveInRow {
             if i == 0 {
                 break;
             }
-            i = i - 1;
+            i -= 1;
         }
-        total_iter_cnt = total_iter_cnt - 2;
+        total_iter_cnt -= 2;
         let total_iter_dist = l_item.get_distance(r_item).abs() + 1;
 
         if let (Some(l_cl), Some(r_cl)) = (l_closing, r_closing) {
@@ -164,7 +164,7 @@ impl Game for FiveInRow {
                         .filter(|i| direction.is_in_direction(i.get_x(), i.get_y()))
                         .collect::<Vec<_>>();
 
-                    let score = FiveInRow::score_from_row(&mv, &items);
+                    let score = FiveInRow::score_from_row(mv, &items);
                     res + score
                 },
             )
@@ -186,7 +186,7 @@ impl Game for FiveInRow {
 
     fn get_possible_moves(&self, myself: bool) -> Vec<FiveInRowMove> {
         let mut vec = Vec::new();
-        if self.moves.len() == 0 {
+        if self.moves.is_empty() {
             vec.push(FiveInRowMove::Mine(0, 0));
             return vec;
         }
@@ -237,7 +237,7 @@ impl Game for FiveInRow {
             );
             x += 1;
         }
-        println!("");
+        println!();
         while x <= max_x {
             print!("┼─────");
             x += 1;
