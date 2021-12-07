@@ -31,14 +31,10 @@ impl FiveInRowMove {
     }
     pub fn is_same_type(&self, maybe_other: Option<&FiveInRowMove>) -> bool {
         if let Some(other) = maybe_other {
-            if let (FiveInRowMove::Mine(_, _), FiveInRowMove::Mine(_, _)) = (self, other) {
-                return true;
-            }
-            if let (FiveInRowMove::Rivals(_, _), FiveInRowMove::Rivals(_, _)) = (self, other) {
-                return true;
-            }
+            GameMove::is_mine(self) == GameMove::is_mine(other)
+        } else {
+            false
         }
-        return false;
     }
 
     pub fn get_distance(&self, mv: &FiveInRowMove) -> i32 {

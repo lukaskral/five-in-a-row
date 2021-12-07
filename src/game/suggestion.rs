@@ -14,8 +14,8 @@ pub struct Suggestion<G: Game> {
 impl<G: Game> Suggestion<G> {
     pub fn new(mv: G::Move, score: Score) -> Self {
         Self {
-            mv: mv,
-            score: score,
+            mv,
+            score,
             suggestions: Box::new(Vec::new()),
             deep_score: None,
             depth: 0,
@@ -25,7 +25,7 @@ impl<G: Game> Suggestion<G> {
         &self.mv
     }
     pub fn get_score(&self) -> &Score {
-        return &self.score;
+        &self.score
     }
 
     pub fn compute_deep_score(&self) -> &Score {
@@ -49,7 +49,7 @@ impl<G: Game> Suggestion<G> {
                 .max()
                 .map_or(Err(Error::DeepScoreComputationError), |s| Ok(s))
         };
-        return score_result.unwrap();
+        score_result.unwrap()
     }
 
     pub fn get_deep_score(&self) -> Score {
@@ -67,7 +67,7 @@ impl<G: Game> Suggestion<G> {
         parents: &VecDeque<G::Move>,
         add: Vec<Suggestion<G>>,
     ) -> Result<(), Error<G>> {
-        if parents.len() > 0 {
+        if !parents.is_empty() {
             Self::extend_suggestions(&mut self.suggestions, parents, add)?;
             let deep_score = self.compute_deep_score();
             self.deep_score = Some(deep_score.clone());
@@ -88,11 +88,11 @@ impl<G: Game> Suggestion<G> {
         let mut parents = parents.clone();
         let parent = parents
             .pop_front()
-            .map_or(Err(Error::SuggestionComputationError), |p| Ok(p))?;
+            .ok_or(Error::SuggestionComputationError)?;
         let suggestion = vec
             .iter_mut()
             .find(|s| *s.get_move() == parent)
-            .map_or(Err(Error::SuggestionComputationError), |s| Ok(s))?;
+            .ok_or(Error::SuggestionComputationError)?;
         suggestion.add_suggestions(&parents, add)?;
         Ok(())
     }

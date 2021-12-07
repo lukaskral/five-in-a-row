@@ -85,7 +85,7 @@ pub async fn wait_my_turn(
                 return Err(fetch::Error::RivalTimeoutError);
             }
         }
-        if let Some(_) = maybe_winner_id {
+        if maybe_winner_id.is_some() {
             return Ok(last_status);
         }
         if last_status.statusCode == 226 {

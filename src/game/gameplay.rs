@@ -16,7 +16,7 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
     #[allow(dead_code)]
     pub fn from_game(game: G) -> Self {
         Self {
-            game: game,
+            game,
             suggestions: Vec::new(),
             connection: None,
         }
@@ -76,9 +76,9 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
 
         possibilities.sort_by(|a, b| {
             if myself {
-                b.get_score().cmp(&a.get_score())
+                b.get_score().cmp(a.get_score())
             } else {
-                a.get_score().cmp(&b.get_score())
+                a.get_score().cmp(b.get_score())
             }
         });
         let mut suggestions = possibilities
@@ -139,7 +139,7 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
     ) -> Result<(), Error<G>> {
         let suggestions = self.get_suggestions(myself, &parents, depth)?;
 
-        if parents.len() == 0 {
+        if parents.is_empty() {
             self.suggestions = suggestions.clone();
         } else {
             Suggestion::extend_suggestions(&mut self.suggestions, &parents, suggestions)?;
@@ -149,7 +149,7 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
     }
 
     pub fn suggest_move(&mut self, myself: bool) -> Result<Suggestion<G>, Error<G>> {
-        if self.suggestions.len() == 0 {
+        if self.suggestions.is_empty() {
             self.compute_suggestions(myself, VecDeque::new(), 0)?;
         }
         self.suggestions
