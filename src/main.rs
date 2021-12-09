@@ -1,7 +1,7 @@
 #[path = "lib.rs"]
 mod lib;
 
-use lib::{api, five_in_row, game, gameplay};
+use lib::{api, five_in_a_row, game, gameplay};
 use std::boxed::Box;
 use std::error::Error;
 

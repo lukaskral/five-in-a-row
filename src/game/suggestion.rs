@@ -118,7 +118,7 @@ impl<G: Game> PartialOrd for Suggestion<G> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::five_in_row::{mv::FiveInRowMove, FiveInRow};
+    use crate::five_in_a_row::{mv::FiveInRowMove, FiveInRow};
 
     #[test]
     fn it_is_comparable() {

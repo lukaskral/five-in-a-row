@@ -5,8 +5,8 @@ mod dir;
 pub mod mv;
 
 use crate::api::jobs_cz::status::Coordinate;
-use crate::five_in_row::dir::Direction;
-use crate::five_in_row::mv::FiveInRowMove;
+use crate::five_in_a_row::dir::Direction;
+use crate::five_in_a_row::mv::FiveInRowMove;
 use crate::game::{error::Error, score::Score, Game, GameMove};
 use std::vec::Vec;
 
