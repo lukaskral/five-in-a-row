@@ -1,12 +1,7 @@
-#[path = "api/api.rs"]
-mod api;
-#[path = "five_in_row/five_in_row.rs"]
-mod five_in_row;
-#[path = "game/game.rs"]
-mod game;
-#[path = "game/gameplay.rs"]
-mod gameplay;
+#[path = "lib.rs"]
+mod lib;
 
+use lib::{api, five_in_row, game, gameplay};
 use std::boxed::Box;
 use std::error::Error;
 
