@@ -1,4 +1,4 @@
-use crate::five_in_row::mv::FiveInRowMove;
+use crate::five_in_a_row::mv::FiveInRowMove;
 
 #[derive(Debug)]
 pub enum Direction {
@@ -32,7 +32,7 @@ impl Direction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::five_in_row::mv::FiveInRowMove;
+    use crate::five_in_a_row::mv::FiveInRowMove;
 
     #[test]
     fn it_creates_iterator() {

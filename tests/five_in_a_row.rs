@@ -3,7 +3,7 @@ mod tests {
     use async_trait::async_trait;
     use game_play::{
         api::game_connection::GameConnection,
-        five_in_row::{mv::FiveInRowMove, FiveInRow},
+        five_in_a_row::{mv::FiveInRowMove, FiveInRow},
         game::{error::Error, Game},
         gameplay::GamePlay,
     };

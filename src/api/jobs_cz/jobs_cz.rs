@@ -12,7 +12,7 @@ pub mod register;
 pub mod status;
 
 use crate::api::game_connection::GameConnection;
-use crate::five_in_row::{mv::FiveInRowMove, FiveInRow};
+use crate::five_in_a_row::{mv::FiveInRowMove, FiveInRow};
 use crate::game::error::Error;
 use async_trait::async_trait;
 
