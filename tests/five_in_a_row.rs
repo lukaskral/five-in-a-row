@@ -202,4 +202,59 @@ mod tests {
             suggested_move
         );
     }
+
+    // #[test]
+    fn it_suggests_correct_move_7() {
+        // https://piskvorky.jobs.cz/detail-hry/9829163b-c578-4b0b-a334-baab9863c76f/
+        let moves = Vec::from([
+            FiveInRowMove::Mine(0, 0),
+            FiveInRowMove::Rivals(-1, 0),
+            FiveInRowMove::Mine(-4, 0),
+            FiveInRowMove::Rivals(-2, 1),
+            FiveInRowMove::Mine(0, -1),
+            FiveInRowMove::Rivals(0, 1),
+            FiveInRowMove::Mine(0, -2),
+            FiveInRowMove::Rivals(-1, 2),
+            FiveInRowMove::Mine(0, -3),
+            FiveInRowMove::Rivals(0, -4),
+            FiveInRowMove::Mine(-1, 1),
+            FiveInRowMove::Rivals(-2, 3),
+            FiveInRowMove::Mine(1, 0),
+            FiveInRowMove::Rivals(-3, 2),
+            FiveInRowMove::Mine(-2, 2),
+            FiveInRowMove::Rivals(1, -1),
+            FiveInRowMove::Mine(-3, 3),
+            FiveInRowMove::Rivals(-4, 4),
+            FiveInRowMove::Mine(-3, 4),
+            FiveInRowMove::Rivals(-2, -1),
+            FiveInRowMove::Mine(-3, -2),
+            FiveInRowMove::Rivals(-3, 0),
+            FiveInRowMove::Mine(-4, -1),
+            FiveInRowMove::Rivals(-4, 1),
+            FiveInRowMove::Mine(-1, -2),
+            FiveInRowMove::Rivals(-5, 0),
+            FiveInRowMove::Mine(-1, 4),
+            FiveInRowMove::Rivals(-6, -1),
+        ]);
+        let game = FiveInRow::from_moves(moves);
+        game.visualize();
+        let mut game_play = GamePlay::<FiveInRow, MockConnection>::from_game(game);
+        game_play
+            .compute_suggestions(true, VecDeque::new(), 2)
+            .unwrap();
+        let suggested = game_play.suggest_move(true).unwrap();
+        let suggested_move = *suggested.get_move();
+
+        // TODO inspect game and find the place where the algorithm failed
+        /*
+        assert!(
+            suggested_move == FiveInRowMove::Mine(2, -2)
+                || suggested_move == FiveInRowMove::Mine(2, 2)
+                || suggested_move == FiveInRowMove::Mine(-2, -3)
+                || suggested_move == FiveInRowMove::Mine(-3, -4),
+            "Expected (2, -2), (2, 2), (-2, -3) or (-3, -4) got {:?}",
+            suggested_move
+        );
+        */
+    }
 }
