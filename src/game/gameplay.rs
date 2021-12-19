@@ -3,7 +3,7 @@ pub mod suggestion;
 
 use crate::api::game_connection::GameConnection;
 use crate::game::{error::Error, score::Score, Game};
-use crate::gameplay::suggestion::Suggestion;
+use crate::gameplay::suggestion::{Suggestion, SuggestionLeaf};
 use std::collections::VecDeque;
 
 pub struct GamePlay<G: Game, C: GameConnection<G>> {
@@ -22,12 +22,12 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
         }
     }
 
-    pub async fn from_api(mut api: C) -> Result<Self, Error<G>> {
-        let game = api.start_game().await?;
+    pub async fn from_api(mut connection: C) -> Result<Self, Error<G>> {
+        let game = connection.start_game().await?;
         Ok(Self {
             game,
             suggestions: Vec::new(),
-            connection: Some(api),
+            connection: Some(connection),
         })
     }
 
@@ -132,6 +132,26 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
             }
         });
         Ok(suggestions)
+    }
+
+    pub fn get_suggestion_leafs(
+        &self,
+        parents: &VecDeque<G::Move>,
+    ) -> Result<Vec<SuggestionLeaf<G>>, Error<G>> {
+        let mut vec = Vec::<SuggestionLeaf<G>>::new();
+        for s in self.suggestions.iter() {
+            if s.get_score().is_finished() {
+                continue;
+            } else if s.get_suggestions().is_empty() {
+                vec.push(SuggestionLeaf(s, parents.clone()));
+            } else {
+                let mut parents = parents.clone();
+                parents.push_back(s.get_move().clone());
+                let mut parent_leafs = self.get_suggestion_leafs(&parents)?;
+                vec.append(&mut parent_leafs);
+            }
+        }
+        Ok(vec)
     }
 
     pub fn compute_suggestions(

@@ -115,6 +115,8 @@ impl<G: Game> PartialOrd for Suggestion<G> {
     }
 }
 
+pub struct SuggestionLeaf<'s, G: Game>(pub &'s Suggestion<G>, pub VecDeque<G::Move>);
+
 #[cfg(test)]
 mod tests {
     use super::*;
