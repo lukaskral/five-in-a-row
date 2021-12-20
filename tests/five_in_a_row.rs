@@ -189,16 +189,17 @@ mod tests {
         game.visualize();
         let mut game_play = GamePlay::<FiveInRow, MockConnection>::from_game(game);
         game_play
-            .compute_suggestions(true, VecDeque::new(), 2)
+            .compute_suggestions(true, VecDeque::new(), 6)
             .unwrap();
         let suggested = game_play.suggest_move(true).unwrap();
         let suggested_move = *suggested.get_move();
         assert!(
             suggested_move == FiveInRowMove::Mine(2, -2)
                 || suggested_move == FiveInRowMove::Mine(2, 2)
+                || suggested_move == FiveInRowMove::Mine(-1, 0)
                 || suggested_move == FiveInRowMove::Mine(-2, -3)
                 || suggested_move == FiveInRowMove::Mine(-3, -4),
-            "Expected (2, -2), (2, 2), (-2, -3) or (-3, -4) got {:?}",
+            "Expected (2, -2), (2, 2), (-1, 0), (-2, -3) or (-3, -4) got {:?}",
             suggested_move
         );
     }
