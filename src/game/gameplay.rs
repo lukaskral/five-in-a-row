@@ -35,6 +35,7 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
         &self,
         myself: bool,
         parent_moves: &VecDeque<G::Move>,
+        count: usize,
     ) -> Result<Vec<Suggestion<G>>, Error<G>> {
         let mut game = self.game.clone();
         for parent_move in parent_moves.iter() {
@@ -93,8 +94,8 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
             .map(|p| p.to_owned())
             .collect::<Vec<_>>();
 
-        if suggestions.len() > 8 {
-            suggestions = suggestions[0..7].to_vec()
+        if suggestions.len() > count {
+            suggestions = suggestions[0..count].to_vec()
         }
         Ok(suggestions)
     }
@@ -105,7 +106,9 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
         parents: &VecDeque<G::Move>,
         depth: u8,
     ) -> Result<Vec<Suggestion<G>>, Error<G>> {
-        let mut suggestions = self.get_single_level_suggestions(myself, parents)?;
+        let suggestion_count = usize::from(u8::max(2 * depth, 6) - 4);
+        let mut suggestions =
+            self.get_single_level_suggestions(myself, parents, suggestion_count)?;
         if depth > 0 {
             for s in suggestions.iter_mut() {
                 if s.get_deep_score().is_finished() {
@@ -182,7 +185,7 @@ impl<G: Game, C: GameConnection<G>> GamePlay<G, C> {
                 self.add_move(rivals_move)?;
                 println!("Rival's move: {:?}", rivals_move,);
             }
-            self.compute_suggestions(true, VecDeque::new(), 3)?;
+            self.compute_suggestions(true, VecDeque::new(), 6)?;
             let maybe_suggestion = self.suggest_move(true);
             if let Ok(suggestion) = maybe_suggestion {
                 println!("My move: {:?}", suggestion.get_move(),);
